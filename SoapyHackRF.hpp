@@ -21,6 +21,7 @@
 
 #pragma once
 #include <libhackrf/hackrf.h>
+#include <string>
 #include <mutex>
 #include <condition_variable>
 #include <SoapySDR/Device.hpp>
