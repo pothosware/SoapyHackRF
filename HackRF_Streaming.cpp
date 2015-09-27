@@ -349,9 +349,9 @@ int SoapyHackRF::writeStream(
 	int8_t *buf = _buf[_buf_head] + _buf_offset * BYTES_PER_SAMPLE;
 
 
-	if ( numElems <= _samp_avail )
+	if ( returnedElems <= _samp_avail )
 	{
-		for ( int i = 0; i < numElems; ++i )
+		for ( int i = 0; i < returnedElems; ++i )
 		{
 			if ( _format == HACKRF_FORMAT_INT8 )
 			{
@@ -369,8 +369,8 @@ int SoapyHackRF::writeStream(
 				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
 			}
 		}
-		_buf_offset	+= numElems;
-		_samp_avail	-= numElems;
+		_buf_offset	+= returnedElems;
+		_samp_avail	-= returnedElems;
 	}else {
 		for ( int i = 0; i < _samp_avail; ++i )
 		{
@@ -397,7 +397,7 @@ int SoapyHackRF::writeStream(
 
 		buf = _buf[_buf_head];
 
-		int remaining = numElems - _samp_avail;
+		int remaining = returnedElems - _samp_avail;
 
 		for ( int i = 0; i < remaining; ++i )
 		{
