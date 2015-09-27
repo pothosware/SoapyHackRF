@@ -60,14 +60,15 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 		int ret = hackrf_device_list_open(list, _id, &_dev );
 		if ( ret != HACKRF_SUCCESS )
 		{
-			SoapySDR_logf( SOAPY_SDR_DEBUG, "Could not Open HackRF Device by Index:%d", _id );
+			SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device by Index:%d", _id );
 		}
 	} else if ( _id == -1 )
 	{
 		int ret = hackrf_open( &_dev );
 		if ( ret != HACKRF_SUCCESS )
 		{
-			SoapySDR_logf( SOAPY_SDR_DEBUG, "Could not Open HackRF Device" );
+			SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device" );
+			throw std::runtime_error("hackrf open failed");
 		}
 	}
 
@@ -112,9 +113,8 @@ std::string SoapyHackRF::getHardwareKey( void ) const
 {
 	uint8_t board_id=BOARD_ID_INVALID;
 
-	if(_dev!=NULL){
-		hackrf_board_id_read(_dev,&board_id);
-	}
+	hackrf_board_id_read(_dev,&board_id);
+
 	return(hackrf_board_id_name((hackrf_board_id)board_id));
 }
 
@@ -122,7 +122,33 @@ std::string SoapyHackRF::getHardwareKey( void ) const
 SoapySDR::Kwargs SoapyHackRF::getHardwareInfo( void ) const
 {
 	SoapySDR::Kwargs info;
-	info["Buffer Size"] = std::to_string( _buf_len * _buf_num * 1.0 / 1024 / 1024 ) + "MB";
+	info["buffer size"] = std::to_string( _buf_len * _buf_num * 1.0 / 1024 / 1024 ) + "MB";
+
+	char version_str[100];
+
+	hackrf_version_string_read(_dev, &version_str[0], 100);
+
+	info["version"] = version_str;
+
+	read_partid_serialno_t read_partid_serialno;
+
+	hackrf_board_partid_serialno_read(_dev, &read_partid_serialno);
+
+	char part_id_str[100];
+
+	sprintf(part_id_str, "%08x%08x", read_partid_serialno.part_id[0], read_partid_serialno.part_id[1]);
+
+	info["part id"] = part_id_str;
+
+	char serial_str[100];
+	sprintf(serial_str, "%08x%08x%08x%08x", read_partid_serialno.serial_no[0], read_partid_serialno.serial_no[1], read_partid_serialno.serial_no[2], read_partid_serialno.serial_no[3]);
+	info["serial"] = serial_str;
+
+	uint16_t clock;
+
+	hackrf_si5351c_read(_dev,0,&clock);
+
+	info["clock source"]=(clock==0x51)?"internal":"external";
 
 	return(info);
 

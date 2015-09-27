@@ -61,13 +61,9 @@ int SoapyHackRF::hackrf_tx_callback( int8_t *buffer, int32_t length )
 	{
 		memset( buffer, 0, length );
 	}else{
-
 		memcpy( buffer, _buf[_buf_tail], length );
-
 		_buf_tail = (_buf_tail + 1) % _buf_num;
-
 		_buf_count--;
-
 	}
 	_buf_cond.notify_one();
 
@@ -119,30 +115,21 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 	if ( direction == SOAPY_SDR_RX )
 	{
-		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start RX" );
+		SoapySDR_logf( SOAPY_SDR_INFO, "Start RX" );
 
 		int ret = hackrf_start_rx( _dev, _hackrf_rx_callback, (void *) this );
 
-		if(ret==HACKRF_SUCCESS){
-
-			_running = (hackrf_is_streaming( _dev ) == HACKRF_TRUE);
-
-		}
+		_running = (hackrf_is_streaming( _dev ) == HACKRF_TRUE);
 
 	}
 	if ( direction == SOAPY_SDR_TX )
 	{
 
-		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start TX" );
+		SoapySDR_logf( SOAPY_SDR_INFO, "Start TX" );
 
 		int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *) this );
 
-		if(ret==HACKRF_SUCCESS){
-
-			_running = (hackrf_is_streaming( _dev ) == HACKRF_TRUE);
-
-		}
-
+		_running = (hackrf_is_streaming( _dev ) == HACKRF_TRUE);
 
 	}
 
@@ -158,7 +145,6 @@ void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 	if ( direction == SOAPY_SDR_RX )
 	{
 		int ret = hackrf_stop_rx( _dev );
-
 
 		_running=false;
 	}
@@ -219,7 +205,61 @@ int SoapyHackRF::deactivateStream(
 	return(0);
 }
 
+void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,uint32_t offset){
 
+	if(format==HACKRF_FORMAT_INT8){
+		int8_t *samples_cs4=(int8_t *) dst;
+		for (uint32_t i=0;i<len;++i){
+			samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] = src[i*BYTES_PER_SAMPLE];
+			samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] = src[i*BYTES_PER_SAMPLE+1];
+		}
+
+	}else if(format==HACKRF_FORMAT_INT16){
+
+		int16_t *samples_cs16=(int16_t *) dst;
+		for (uint32_t i=0;i<len;++i){
+			samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] = (int16_t)(src[i*BYTES_PER_SAMPLE]<<8);
+			samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] = (int16_t)(src[i*BYTES_PER_SAMPLE+1]<<8);
+		}
+	}else if(format==HACKRF_FORMAT_FLOAT32){
+		float_t *samples_cf32=(float_t *) dst;
+		for (uint32_t i=0;i<len;++i){
+			samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] = (float_t)(src[i*BYTES_PER_SAMPLE]/127.0);
+			samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] = (float_t)(src[i*BYTES_PER_SAMPLE+1]/127.0);
+		}
+	}else {
+		SoapySDR_log( SOAPY_SDR_ERROR, "read format not support" );
+	}
+}
+
+
+void writebuf(void * src, int8_t* dst, uint32_t len,uint32_t format,uint32_t offset) {
+	if(format==HACKRF_FORMAT_INT8){
+		int8_t *samples_cs4=(int8_t *) src;
+		for (uint32_t i=0;i<len;++i){
+			dst[i*BYTES_PER_SAMPLE] = samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE];
+			dst[i*BYTES_PER_SAMPLE+1] = samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1];
+
+		}
+
+	}else if(format==HACKRF_FORMAT_INT16){
+
+		int16_t *samples_cs16=(int16_t *) src;
+		for (uint32_t i=0;i<len;++i){
+			dst[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] >> 8);
+			dst[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] >> 8);
+		}
+	}else if(format==HACKRF_FORMAT_FLOAT32){
+		float_t *samples_cf32=(float_t *) src;
+		for (uint32_t i=0;i<len;++i){
+			dst[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] * 127.0);
+			dst[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] * 127.0);
+		}
+	}else {
+		SoapySDR_log( SOAPY_SDR_ERROR, "write format not support" );
+
+	}
+}
 int SoapyHackRF::readStream(
 	SoapySDR::Stream *stream,
 	void * const *buffs,
@@ -229,9 +269,6 @@ int SoapyHackRF::readStream(
 	const long timeoutUs )
 {
 	/* this is the user's buffer for channel 0 */
-	int8_t	*samples_cs4	= (int8_t *) buffs[0];
-	int16_t *samples_cs16	= (int16_t *) buffs[0];
-	float	*samples_cf32	= (float *) buffs[0];
 
 	size_t returnedElems = numElems< (_buf_len / BYTES_PER_SAMPLE)?numElems:(_buf_len / BYTES_PER_SAMPLE);
 
@@ -245,75 +282,30 @@ int SoapyHackRF::readStream(
 	if ( !_running )
 		return(SOAPY_SDR_STREAM_ERROR);
 
-
 	int8_t *buf = _buf[_buf_head] + _buf_offset * BYTES_PER_SAMPLE;
 
 	if ( returnedElems <= _samp_avail )
 	{
-		for ( int i = 0; i < returnedElems; ++i )
-		{
-		if ( _format == HACKRF_FORMAT_INT8 )
-			{
-				samples_cs4[i*BYTES_PER_SAMPLE] = buf[i*BYTES_PER_SAMPLE];
-				samples_cs4[i*BYTES_PER_SAMPLE+1] = buf[i*BYTES_PER_SAMPLE+1];
-			}else if ( _format == HACKRF_FORMAT_INT16 )
-			{
-				samples_cs16[i*BYTES_PER_SAMPLE] = int16_t( buf[i*BYTES_PER_SAMPLE] << 8 );
-				samples_cs16[i*BYTES_PER_SAMPLE+1] = int16_t( buf[i*BYTES_PER_SAMPLE+1] << 8 );
-			}else if ( _format == HACKRF_FORMAT_FLOAT32 )
-			{
-				samples_cf32[i*BYTES_PER_SAMPLE] = float(buf[i*BYTES_PER_SAMPLE] / 127.0);
-				samples_cf32[i*BYTES_PER_SAMPLE+1] = float(buf[i*BYTES_PER_SAMPLE+1] / 127.0);
-			}
-		}
+		readbuf(buf,buffs[0],returnedElems,_format,0);
 		_buf_offset	+= returnedElems;
 		_samp_avail	-= returnedElems;
 	}else  {
-		for ( int i = 0; i < _samp_avail; ++i )
-		{
-		if ( _format == HACKRF_FORMAT_INT8 )
-			{
-				samples_cs4[i*BYTES_PER_SAMPLE] = buf[i*BYTES_PER_SAMPLE];
-				samples_cs4[i*BYTES_PER_SAMPLE+1] = buf[i*BYTES_PER_SAMPLE+1];
-			}else if ( _format == HACKRF_FORMAT_INT16 )
-			{
-				samples_cs16[i*BYTES_PER_SAMPLE] = int16_t( buf[i*BYTES_PER_SAMPLE] << 8 );
-				samples_cs16[i*BYTES_PER_SAMPLE+1] = int16_t( buf[i*BYTES_PER_SAMPLE+1] << 8 );
-			}else if ( _format == HACKRF_FORMAT_FLOAT32 )
-			{
-				samples_cf32[i*BYTES_PER_SAMPLE] = float(buf[i*BYTES_PER_SAMPLE] / 127.0);
-				samples_cf32[i*BYTES_PER_SAMPLE+1] = float(buf[i*BYTES_PER_SAMPLE+1] / 127.0);
-			}
-		}
+
+		readbuf(buf,buffs[0],_samp_avail,_format,0);
 
 		_buf_head = (_buf_head + 1) % _buf_num;
 		_buf_count--;
-
 
 		buf = _buf[_buf_head];
 
 		int remaining = returnedElems - _samp_avail;
 
-		for ( int i = 0; i < remaining ; ++i )
-		{
-			if ( _format == HACKRF_FORMAT_INT8 )
-			{
-				samples_cs4[i*BYTES_PER_SAMPLE] = buf[i*BYTES_PER_SAMPLE];
-				samples_cs4[i*BYTES_PER_SAMPLE+1] = buf[i*BYTES_PER_SAMPLE+1];
-			}else if ( _format == HACKRF_FORMAT_INT16 )
-			{
-				samples_cs16[i*BYTES_PER_SAMPLE] = int16_t( buf[i*BYTES_PER_SAMPLE] << 8 );
-				samples_cs16[i*BYTES_PER_SAMPLE+1] = int16_t( buf[i*BYTES_PER_SAMPLE+1] << 8 );
-			}else if ( _format == HACKRF_FORMAT_FLOAT32 )
-			{
-				samples_cf32[i*BYTES_PER_SAMPLE] = float(buf[i*BYTES_PER_SAMPLE] / 127.0);
-				samples_cf32[i*BYTES_PER_SAMPLE+1] = float(buf[i*BYTES_PER_SAMPLE+1] / 127.0);
-			}
-		}
+		readbuf(buf,buffs[0],remaining,_format,_samp_avail);
 
 		_buf_offset	= remaining;
 		_samp_avail	= (_buf_len / BYTES_PER_SAMPLE) - remaining;
 	}
+
 
 
 	return(returnedElems);
@@ -328,9 +320,6 @@ int SoapyHackRF::writeStream(
 	long long &timeNs,
 	const long timeoutUs )
 {
-	int8_t	*samples_cs4	= (int8_t *) buffs[0];
-	int16_t *samples_cs16	= (int16_t *) buffs[0];
-	float	*samples_cf32	= (float *) buffs[0];
 
 	size_t returnedElems = numElems< (_buf_len / BYTES_PER_SAMPLE)?numElems:(_buf_len / BYTES_PER_SAMPLE);
 
@@ -351,45 +340,13 @@ int SoapyHackRF::writeStream(
 
 	if ( returnedElems <= _samp_avail )
 	{
-		for ( int i = 0; i < returnedElems; ++i )
-		{
-			if ( _format == HACKRF_FORMAT_INT8 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = samples_cs4[i*BYTES_PER_SAMPLE];
-				buf[i*BYTES_PER_SAMPLE+1] = samples_cs4[i*BYTES_PER_SAMPLE+1];
-				
-			}else if ( _format == HACKRF_FORMAT_INT16 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cs16[i*BYTES_PER_SAMPLE] >> 8);
-				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cs16[i*BYTES_PER_SAMPLE+1] >> 8);
-			
-			}else if ( _format == HACKRF_FORMAT_FLOAT32 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
-				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
-			}
-		}
+		writebuf(buffs[0],buf,returnedElems,_format,0);
+
 		_buf_offset	+= returnedElems;
 		_samp_avail	-= returnedElems;
 	}else {
-		for ( int i = 0; i < _samp_avail; ++i )
-		{
-			if ( _format == HACKRF_FORMAT_INT8 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = samples_cs4[i*BYTES_PER_SAMPLE];
-				buf[i*BYTES_PER_SAMPLE+1] = samples_cs4[i*BYTES_PER_SAMPLE+1];
-				
-			}else if ( _format == HACKRF_FORMAT_INT16 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cs16[i*BYTES_PER_SAMPLE] >> 8);
-				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cs16[i*BYTES_PER_SAMPLE+1] >> 8);
-			
-			}else if ( _format == HACKRF_FORMAT_FLOAT32 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
-				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
-			}
-		}
+
+		writebuf(buffs[0],buf,_samp_avail,_format,0);
 
 		_buf_head = (_buf_head + 1) % _buf_num;
 
@@ -399,24 +356,8 @@ int SoapyHackRF::writeStream(
 
 		int remaining = returnedElems - _samp_avail;
 
-		for ( int i = 0; i < remaining; ++i )
-		{
-			if ( _format == HACKRF_FORMAT_INT8 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = samples_cs4[i*BYTES_PER_SAMPLE];
-				buf[i*BYTES_PER_SAMPLE+1] = samples_cs4[i*BYTES_PER_SAMPLE+1];
-				
-			}else if ( _format == HACKRF_FORMAT_INT16 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cs16[i*BYTES_PER_SAMPLE] >> 8);
-				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cs16[i*BYTES_PER_SAMPLE+1] >> 8);
-			
-			}else if ( _format == HACKRF_FORMAT_FLOAT32 )
-			{
-				buf[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
-				buf[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
-			}
-		}
+		writebuf(buffs[0],buf,remaining,_format,_samp_avail);
+
 		_buf_offset	= remaining;
 		_samp_avail	= (_buf_len / BYTES_PER_SAMPLE) - remaining;
 	}
