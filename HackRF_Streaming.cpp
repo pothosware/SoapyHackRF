@@ -208,24 +208,24 @@ int SoapyHackRF::deactivateStream(
 void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,uint32_t offset){
 
 	if(format==HACKRF_FORMAT_INT8){
-		int8_t *samples_cs4=(int8_t *) dst;
+		int8_t *samples_cs4=(int8_t *) dst+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] = src[i*BYTES_PER_SAMPLE];
-			samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] = src[i*BYTES_PER_SAMPLE+1];
+			samples_cs4[i*BYTES_PER_SAMPLE] = src[i*BYTES_PER_SAMPLE];
+			samples_cs4[i*BYTES_PER_SAMPLE+1] = src[i*BYTES_PER_SAMPLE+1];
 		}
 
 	}else if(format==HACKRF_FORMAT_INT16){
 
-		int16_t *samples_cs16=(int16_t *) dst;
+		int16_t *samples_cs16=(int16_t *) dst+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] = (int16_t)(src[i*BYTES_PER_SAMPLE]<<8);
-			samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] = (int16_t)(src[i*BYTES_PER_SAMPLE+1]<<8);
+			samples_cs16[i*BYTES_PER_SAMPLE] = (int16_t)(src[i*BYTES_PER_SAMPLE]<<8);
+			samples_cs16[i*BYTES_PER_SAMPLE+1] = (int16_t)(src[i*BYTES_PER_SAMPLE+1]<<8);
 		}
 	}else if(format==HACKRF_FORMAT_FLOAT32){
-		float_t *samples_cf32=(float_t *) dst;
+		float_t *samples_cf32=(float_t *) dst+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] = (float_t)(src[i*BYTES_PER_SAMPLE]/127.0);
-			samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] = (float_t)(src[i*BYTES_PER_SAMPLE+1]/127.0);
+			samples_cf32[i*BYTES_PER_SAMPLE] = (float_t)(src[i*BYTES_PER_SAMPLE]/127.0);
+			samples_cf32[i*BYTES_PER_SAMPLE+1] = (float_t)(src[i*BYTES_PER_SAMPLE+1]/127.0);
 		}
 	}else {
 		SoapySDR_log( SOAPY_SDR_ERROR, "read format not support" );
@@ -235,31 +235,32 @@ void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,uint32_t off
 
 void writebuf(void * src, int8_t* dst, uint32_t len,uint32_t format,uint32_t offset) {
 	if(format==HACKRF_FORMAT_INT8){
-		int8_t *samples_cs4=(int8_t *) src;
+		int8_t *samples_cs4=(int8_t *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE];
-			dst[i*BYTES_PER_SAMPLE+1] = samples_cs4[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1];
+			dst[i*BYTES_PER_SAMPLE] = samples_cs4[i*BYTES_PER_SAMPLE];
+			dst[i*BYTES_PER_SAMPLE+1] = samples_cs4[i*BYTES_PER_SAMPLE+1];
 
 		}
 
 	}else if(format==HACKRF_FORMAT_INT16){
 
-		int16_t *samples_cs16=(int16_t *) src;
+		int16_t *samples_cs16=(int16_t *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] >> 8);
-			dst[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cs16[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] >> 8);
+			dst[i*BYTES_PER_SAMPLE] = (int16_t) (samples_cs16[i*BYTES_PER_SAMPLE] >> 8);
+			dst[i*BYTES_PER_SAMPLE+1] = (int16_t) (samples_cs16[i*BYTES_PER_SAMPLE+1] >> 8);
 		}
 	}else if(format==HACKRF_FORMAT_FLOAT32){
-		float_t *samples_cf32=(float_t *) src;
+		float_t *samples_cf32=(float_t *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE] * 127.0);
-			dst[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[offset*BYTES_PER_SAMPLE+i*BYTES_PER_SAMPLE+1] * 127.0);
+			dst[i*BYTES_PER_SAMPLE] = (float_t) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
+			dst[i*BYTES_PER_SAMPLE+1] = (float_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
 		}
 	}else {
 		SoapySDR_log( SOAPY_SDR_ERROR, "write format not support" );
 
 	}
 }
+
 int SoapyHackRF::readStream(
 	SoapySDR::Stream *stream,
 	void * const *buffs,
