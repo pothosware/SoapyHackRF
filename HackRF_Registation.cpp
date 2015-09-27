@@ -42,41 +42,40 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 			uint8_t board_id = BOARD_ID_INVALID;
 			read_partid_serialno_t read_partid_serialno;
 
-			int ret=hackrf_device_list_open(list, i, &device);
-
-			if(ret!=HACKRF_SUCCESS){
-				hackrf_device_list_free(list);
-				SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device" );
-				throw std::runtime_error("hackrf open failed");
-			}
+			hackrf_device_list_open(list, i, &device);
 
 			SoapySDR::Kwargs options;
 
-			hackrf_board_id_read(device, &board_id);
+			if (device!=NULL) {
 
-			options["device"] = hackrf_board_id_name((hackrf_board_id)board_id);
+				hackrf_board_id_read(device, &board_id);
 
-			char version_str[100];
+				options["device"] = hackrf_board_id_name((hackrf_board_id) board_id);
 
-			hackrf_version_string_read(device, &version_str[0], 100);
+				char version_str[100];
 
-			options["version"] = version_str;
-			
-			hackrf_board_partid_serialno_read(device, &read_partid_serialno);
+				hackrf_version_string_read(device, &version_str[0], 100);
 
-			char part_id_str[100];
+				options["version"] = version_str;
 
-			sprintf(part_id_str, "%08x%08x", read_partid_serialno.part_id[0], read_partid_serialno.part_id[1]);
+				hackrf_board_partid_serialno_read(device, &read_partid_serialno);
 
-			options["part_id"] = part_id_str;
+				char part_id_str[100];
 
-			char serial_str[100];
-			sprintf(serial_str, "%08x%08x%08x%08x", read_partid_serialno.serial_no[0], read_partid_serialno.serial_no[1], read_partid_serialno.serial_no[2], read_partid_serialno.serial_no[3]);
-			options["serial"] = serial_str;
+				sprintf(part_id_str, "%08x%08x", read_partid_serialno.part_id[0], read_partid_serialno.part_id[1]);
 
-			results.push_back(options);
+				options["part_id"] = part_id_str;
 
-			hackrf_close(device);
+				char serial_str[100];
+				sprintf(serial_str, "%08x%08x%08x%08x", read_partid_serialno.serial_no[0],
+						read_partid_serialno.serial_no[1], read_partid_serialno.serial_no[2],
+						read_partid_serialno.serial_no[3]);
+				options["serial"] = serial_str;
+
+				results.push_back(options);
+
+				hackrf_close(device);
+			}
 		
 		}
 	
