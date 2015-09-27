@@ -21,7 +21,7 @@
 
 #include "SoapyHackRF.hpp"
 
-int _hackrf_callback( hackrf_transfer *transfer )
+int _hackrf_rx_callback( hackrf_transfer *transfer )
 {
 	SoapyHackRF* obj = (SoapyHackRF *) transfer->rx_ctx;
 	return(obj->hackrf_rx_callback( (int8_t *) transfer->buffer, transfer->valid_length ) );
@@ -121,7 +121,7 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 	{
 		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start RX" );
 
-		int ret = hackrf_start_rx( _dev, _hackrf_callback, (void *) this );
+		int ret = hackrf_start_rx( _dev, _hackrf_rx_callback, (void *) this );
 
 		if(ret==HACKRF_SUCCESS){
 
@@ -233,6 +233,8 @@ int SoapyHackRF::readStream(
 	int16_t *samples_cs16	= (int16_t *) buffs[0];
 	float	*samples_cf32	= (float *) buffs[0];
 
+	size_t returnedElems = numElems< (_buf_len / BYTES_PER_SAMPLE)?numElems:(_buf_len / BYTES_PER_SAMPLE);
+
 
 	//_buf_mutex.lock();
 	std::unique_lock <std::mutex> lock( _buf_mutex );
@@ -243,11 +245,12 @@ int SoapyHackRF::readStream(
 	if ( !_running )
 		return(SOAPY_SDR_STREAM_ERROR);
 
+
 	int8_t *buf = _buf[_buf_head] + _buf_offset * BYTES_PER_SAMPLE;
 
-	if ( numElems <= _samp_avail )
+	if ( returnedElems <= _samp_avail )
 	{
-		for ( int i = 0; i < numElems; ++i )
+		for ( int i = 0; i < returnedElems; ++i )
 		{
 		if ( _format == HACKRF_FORMAT_INT8 )
 			{
@@ -263,8 +266,8 @@ int SoapyHackRF::readStream(
 				samples_cf32[i*BYTES_PER_SAMPLE+1] = float(buf[i*BYTES_PER_SAMPLE+1] / 127.0);
 			}
 		}
-		_buf_offset	+= numElems;
-		_samp_avail	-= numElems;
+		_buf_offset	+= returnedElems;
+		_samp_avail	-= returnedElems;
 	}else  {
 		for ( int i = 0; i < _samp_avail; ++i )
 		{
@@ -282,14 +285,14 @@ int SoapyHackRF::readStream(
 				samples_cf32[i*BYTES_PER_SAMPLE+1] = float(buf[i*BYTES_PER_SAMPLE+1] / 127.0);
 			}
 		}
-		//_buf_mutex.try_lock();
+
 		_buf_head = (_buf_head + 1) % _buf_num;
 		_buf_count--;
-		//_buf_mutex.unlock();
+
 
 		buf = _buf[_buf_head];
 
-		int remaining = numElems - _samp_avail;
+		int remaining = returnedElems - _samp_avail;
 
 		for ( int i = 0; i < remaining ; ++i )
 		{
@@ -313,7 +316,7 @@ int SoapyHackRF::readStream(
 	}
 
 
-	return(numElems);
+	return(returnedElems);
 }
 
 
@@ -328,6 +331,8 @@ int SoapyHackRF::writeStream(
 	int8_t	*samples_cs4	= (int8_t *) buffs[0];
 	int16_t *samples_cs16	= (int16_t *) buffs[0];
 	float	*samples_cf32	= (float *) buffs[0];
+
+	size_t returnedElems = numElems< (_buf_len / BYTES_PER_SAMPLE)?numElems:(_buf_len / BYTES_PER_SAMPLE);
 
 
 	std::unique_lock <std::mutex> lock( _buf_mutex );
@@ -417,7 +422,7 @@ int SoapyHackRF::writeStream(
 	}
 
 
-	return(numElems);
+	return(returnedElems);
 }
 
 

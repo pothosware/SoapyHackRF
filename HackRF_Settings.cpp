@@ -37,7 +37,7 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	_frequency = 1000000;
 
-	_samplerate = _bandwidth = 8000000;
+	_samplerate = _bandwidth = 2000000;
 
 	_id = -1;
 
