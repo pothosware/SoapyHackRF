@@ -42,7 +42,13 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 			uint8_t board_id = BOARD_ID_INVALID;
 			read_partid_serialno_t read_partid_serialno;
 
-			hackrf_device_list_open(list, i, &device);
+			int ret=hackrf_device_list_open(list, i, &device);
+
+			if(ret!=HACKRF_SUCCESS){
+				hackrf_device_list_free(list);
+				SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device" );
+				throw std::runtime_error("hackrf open failed");
+			}
 
 			SoapySDR::Kwargs options;
 
@@ -80,7 +86,7 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 
 	hackrf_exit();
 
-    return results;
+	return results;
 }
 
 static SoapySDR::Device *make_HackRF(const SoapySDR::Kwargs &args)

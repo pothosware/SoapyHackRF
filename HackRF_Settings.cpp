@@ -21,15 +21,16 @@
 
 #include "SoapyHackRF.hpp"
 
+
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
 	_running	= false;
 	
 	_dev		= NULL;
 
-	_rx_vga_gain = 0;
+	_rx_vga_gain = 20;
 
-	_rx_lna_gain = 0;
+	_rx_lna_gain = 16;
 
 	_tx_vga_gain = 0;
 
@@ -46,7 +47,6 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	hackrf_init();
 
-
 	hackrf_device_list_t	* list = hackrf_device_list();
 
 	if ( args.count( "hackrf" ) != 0 )
@@ -60,7 +60,9 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 		int ret = hackrf_device_list_open(list, _id, &_dev );
 		if ( ret != HACKRF_SUCCESS )
 		{
+			hackrf_device_list_free(list);
 			SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device by Index:%d", _id );
+			throw std::runtime_error("hackrf open failed");
 		}
 	} else if ( _id == -1 )
 	{
