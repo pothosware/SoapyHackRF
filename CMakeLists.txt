@@ -23,9 +23,22 @@ message(STATUS "LIBHACKRF_LIBRARIES - ${LIBHACKRF_LIBRARIES}")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${LIBHACKRF_INCLUDE_DIRS})
 
+#enable c++11 features
 if(CMAKE_COMPILER_IS_GNUCXX)
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++11")
-endif()
+
+    #C++11 is a required language feature for this project
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-std=c++11" HAS_STD_CXX11)
+    if(HAS_STD_CXX11)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    else(HAS_STD_CXX11)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    endif()
+
+    #disable warnings for unused parameters
+    add_definitions(-Wno-unused-parameter)
+
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
 SOAPY_SDR_MODULE_UTIL(
     TARGET HackRFSupport
