@@ -84,9 +84,9 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 		throw std::runtime_error( "setupStream invalid channel selection" );
 	}
 
-	if ( format == "CS4" )
+	if ( format == "CS8" )
 	{
-		SoapySDR_log( SOAPY_SDR_INFO, "Using format CS4." );
+		SoapySDR_log( SOAPY_SDR_INFO, "Using format CS8." );
 		_format = HACKRF_FORMAT_INT8;
 	}else if ( format == "CS16" )
 	{
