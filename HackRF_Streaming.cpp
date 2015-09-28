@@ -224,10 +224,10 @@ void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,uint32_t off
 			samples_cs16[i*BYTES_PER_SAMPLE+1] = (int16_t)(src[i*BYTES_PER_SAMPLE+1]<<8);
 		}
 	}else if(format==HACKRF_FORMAT_FLOAT32){
-		float_t *samples_cf32=(float_t *) dst+offset*BYTES_PER_SAMPLE;
+		float *samples_cf32=(float *) dst+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			samples_cf32[i*BYTES_PER_SAMPLE] = (float_t)(src[i*BYTES_PER_SAMPLE]/127.0);
-			samples_cf32[i*BYTES_PER_SAMPLE+1] = (float_t)(src[i*BYTES_PER_SAMPLE+1]/127.0);
+			samples_cf32[i*BYTES_PER_SAMPLE] = (float)(src[i*BYTES_PER_SAMPLE]/127.0);
+			samples_cf32[i*BYTES_PER_SAMPLE+1] = (float)(src[i*BYTES_PER_SAMPLE+1]/127.0);
 		}
 	}else {
 		SoapySDR_log( SOAPY_SDR_ERROR, "read format not support" );
@@ -252,10 +252,10 @@ void writebuf(void * src, int8_t* dst, uint32_t len,uint32_t format,uint32_t off
 			dst[i*BYTES_PER_SAMPLE+1] = (int16_t) (samples_cs16[i*BYTES_PER_SAMPLE+1] >> 8);
 		}
 	}else if(format==HACKRF_FORMAT_FLOAT32){
-		float_t *samples_cf32=(float_t *) src+offset*BYTES_PER_SAMPLE;
+		float *samples_cf32=(float *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = (float_t) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
-			dst[i*BYTES_PER_SAMPLE+1] = (float_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
+			dst[i*BYTES_PER_SAMPLE] = (float) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
+			dst[i*BYTES_PER_SAMPLE+1] = (float) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
 		}
 	}else {
 		SoapySDR_log( SOAPY_SDR_ERROR, "write format not support" );
