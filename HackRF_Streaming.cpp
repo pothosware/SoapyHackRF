@@ -43,6 +43,7 @@ int SoapyHackRF::hackrf_rx_callback( int8_t *buffer, int32_t length )
 	memcpy( _buf[_buf_tail], buffer, length );
 	if ( _buf_count == _buf_num )
 	{
+		_overflow=true;
 		_buf_head = (_buf_head + 1) % _buf_num;
 	}else  {
 		_buf_count++;
@@ -60,6 +61,7 @@ int SoapyHackRF::hackrf_tx_callback( int8_t *buffer, int32_t length )
 	if ( _buf_count == 0 )
 	{
 		memset( buffer, 0, length );
+		_underflow=true;
 	}else{
 		memcpy( buffer, _buf[_buf_tail], length );
 		_buf_tail = (_buf_tail + 1) % _buf_num;
@@ -283,6 +285,11 @@ int SoapyHackRF::readStream(
 	if ( !_running )
 		return(SOAPY_SDR_STREAM_ERROR);
 
+	if(_overflow) {
+		_overflow=false;
+		return SOAPY_SDR_OVERFLOW;
+	}
+
 	int8_t *buf = _buf[_buf_head] + _buf_offset * BYTES_PER_SAMPLE;
 
 	if ( returnedElems <= _samp_avail )
@@ -367,4 +374,26 @@ int SoapyHackRF::writeStream(
 	return(returnedElems);
 }
 
+
+int SoapyHackRF::readStreamStatus(
+		SoapySDR::Stream *stream,
+		size_t &chanMask,
+		int &flags,
+		long long &timeNs,
+		const long timeoutUs
+){
+	const int direction = *reinterpret_cast<int *>(stream);
+
+	if (direction == SOAPY_SDR_RX) return SOAPY_SDR_NOT_SUPPORTED;
+
+	int event_code =0;
+
+	if(_underflow){
+		_underflow=false;
+		event_code =SOAPY_SDR_UNDERFLOW;
+	}
+
+	return event_code;
+
+}
 

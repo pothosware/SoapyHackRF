@@ -116,6 +116,15 @@ public:
 		long long &timeNs,
 		const long timeoutUs = 100000 );
 
+	int readStreamStatus(
+			SoapySDR::Stream *stream,
+			size_t &chanMask,
+			int &flags,
+			long long &timeNs,
+			const long timeoutUs
+	);
+
+
 
 	/*******************************************************************
 	 * Antenna API
@@ -243,8 +252,8 @@ private:
 	uint32_t	_buf_offset;
 
 	int32_t _samp_avail;
-
-
+	bool _overflow;
+	bool _underflow;
 	std::mutex		_buf_mutex;
 	std::condition_variable _buf_cond;
 
