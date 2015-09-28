@@ -46,5 +46,6 @@ SOAPY_SDR_MODULE_UTIL(
 	HackRF_Registation.cpp
 	HackRF_Settings.cpp
 	HackRF_Streaming.cpp
+	HackRF_Session.cpp
     LIBRARIES ${LIBHACKRF_LIBRARIES}
 )

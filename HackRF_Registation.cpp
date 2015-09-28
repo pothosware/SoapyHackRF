@@ -26,11 +26,11 @@
 
 static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 {
-    std::vector<SoapySDR::Kwargs> results;
+	SoapyHackRFSession Sess;
+
+	std::vector<SoapySDR::Kwargs> results;
 
 	hackrf_device_list_t *list;
-
-	hackrf_init();
 
 	list =hackrf_device_list();
 
@@ -82,8 +82,6 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 	}
 
 	hackrf_device_list_free(list);
-
-	hackrf_exit();
 
 	return results;
 }

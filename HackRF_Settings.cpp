@@ -49,8 +49,6 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	_buf_num	= BUF_NUM;
 	_buf_len	= BUF_LEN;
 
-	hackrf_init();
-
 	hackrf_device_list_t	* list = hackrf_device_list();
 
 	if ( args.count( "hackrf" ) != 0 )
@@ -96,9 +94,7 @@ SoapyHackRF::~SoapyHackRF( void )
 	if ( _dev )
 	{
 		hackrf_close( _dev );
-		hackrf_exit();
 	}
-	
 
 	/* cleanup device handles */
 }

@@ -37,6 +37,16 @@ enum HackRF_Format {
 	HACKRF_FORMAT_INT8	=2,
 };
 
+/*!
+ * The session object manages hackrf_init/exit
+ * with a process-wide reference count.
+ */
+class SoapyHackRFSession
+{
+public:
+	SoapyHackRFSession(void);
+	~SoapyHackRFSession(void);
+};
 
 class SoapyHackRF : public SoapySDR::Device
 {
@@ -257,5 +267,5 @@ private:
 	std::mutex		_buf_mutex;
 	std::condition_variable _buf_cond;
 
-
+	SoapyHackRFSession _sess;
 };
