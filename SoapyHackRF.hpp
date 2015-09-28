@@ -212,6 +212,7 @@ public:
 private:
 	bool _running;
 
+	bool _auto_bandwidth;
 
 	hackrf_device * _dev;
 

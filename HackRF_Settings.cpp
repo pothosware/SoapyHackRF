@@ -25,6 +25,8 @@
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
 	_running	= false;
+
+	_auto_bandwidth=true;
 	
 	_dev		= NULL;
 
@@ -38,7 +40,9 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	_frequency = 1000000;
 
-	_samplerate = _bandwidth = 2000000;
+	_samplerate = 2000000;
+
+	_bandwidth=0;
 
 	_id = -1;
 
@@ -430,6 +434,14 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 	if ( _dev != NULL )
 	{
 		int ret = hackrf_set_sample_rate( _dev, _samplerate );
+
+		if(_auto_bandwidth){
+
+			_bandwidth=_samplerate;
+
+			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
+		}
+
 		if ( ret != HACKRF_SUCCESS )
 		{
 			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_sample_rate(%f) returned %s", _samplerate, hackrf_error_name( (hackrf_error) ret ) );
@@ -459,15 +471,24 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
 	_bandwidth = bw;
-	if ( _dev != NULL )
-	{
-		int ret = hackrf_set_baseband_filter_bandwidth( _dev, _bandwidth );
-		if ( ret != HACKRF_SUCCESS )
+
+	if(_bandwidth!=0){
+		_auto_bandwidth=false;
+
+		if ( _dev != NULL )
 		{
-			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_baseband_filter_bandwidth(%f) returned %s", _bandwidth, hackrf_error_name( (hackrf_error) ret ) );
-			throw std::runtime_error( "setBandwidth()" );
+			int ret = hackrf_set_baseband_filter_bandwidth( _dev, _bandwidth );
+			if ( ret != HACKRF_SUCCESS )
+			{
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_baseband_filter_bandwidth(%f) returned %s", _bandwidth, hackrf_error_name( (hackrf_error) ret ) );
+				throw std::runtime_error( "setBandwidth()" );
+			}
 		}
+
+	}else{
+		_auto_bandwidth=true;
 	}
+
 }
 
 
