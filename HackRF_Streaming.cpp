@@ -210,10 +210,10 @@ int SoapyHackRF::deactivateStream(
 void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,uint32_t offset){
 
 	if(format==HACKRF_FORMAT_INT8){
-		int8_t *samples_cs4=(int8_t *) dst+offset*BYTES_PER_SAMPLE;
+		int8_t *samples_cs8=(int8_t *) dst+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			samples_cs4[i*BYTES_PER_SAMPLE] = src[i*BYTES_PER_SAMPLE];
-			samples_cs4[i*BYTES_PER_SAMPLE+1] = src[i*BYTES_PER_SAMPLE+1];
+			samples_cs8[i*BYTES_PER_SAMPLE] = src[i*BYTES_PER_SAMPLE];
+			samples_cs8[i*BYTES_PER_SAMPLE+1] = src[i*BYTES_PER_SAMPLE+1];
 		}
 
 	}else if(format==HACKRF_FORMAT_INT16){
@@ -237,10 +237,10 @@ void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,uint32_t off
 
 void writebuf(void * src, int8_t* dst, uint32_t len,uint32_t format,uint32_t offset) {
 	if(format==HACKRF_FORMAT_INT8){
-		int8_t *samples_cs4=(int8_t *) src+offset*BYTES_PER_SAMPLE;
+		int8_t *samples_cs8=(int8_t *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = samples_cs4[i*BYTES_PER_SAMPLE];
-			dst[i*BYTES_PER_SAMPLE+1] = samples_cs4[i*BYTES_PER_SAMPLE+1];
+			dst[i*BYTES_PER_SAMPLE] = samples_cs8[i*BYTES_PER_SAMPLE];
+			dst[i*BYTES_PER_SAMPLE+1] = samples_cs8[i*BYTES_PER_SAMPLE+1];
 
 		}
 
