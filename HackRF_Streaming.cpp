@@ -21,6 +21,8 @@
 
 #include "SoapyHackRF.hpp"
 #include <SoapySDR/Logger.hpp>
+#include <chrono>
+#include <thread>
 
 int _hackrf_rx_callback( hackrf_transfer *transfer )
 {
@@ -309,6 +311,7 @@ int SoapyHackRF::readStream(
 
 	if(_overflow) {
 		_overflow=false;
+		SoapySDR::log(SOAPY_SDR_SSI, "O");
 		return SOAPY_SDR_OVERFLOW;
 	}
 
@@ -409,14 +412,26 @@ int SoapyHackRF::readStreamStatus(
 
 	if (direction == SOAPY_SDR_RX) return SOAPY_SDR_NOT_SUPPORTED;
 
-	int event_code =0;
+	//calculate when the loop should exit
+	const auto timeout = std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(std::chrono::microseconds(timeoutUs));
+	const auto exitTime = std::chrono::high_resolution_clock::now() + timeout;
 
-	if(_underflow){
-		_underflow=false;
-		event_code =SOAPY_SDR_UNDERFLOW;
+	//poll for status events until the timeout expires
+	while (true)
+	{
+		if(_underflow){
+			_underflow=false;
+			SoapySDR::log(SOAPY_SDR_SSI, "U");
+			return SOAPY_SDR_UNDERFLOW;
+		}
+
+		//sleep for a fraction of the total timeout
+		const auto sleepTimeUs = std::min<long>(1000, timeoutUs/10);
+		std::this_thread::sleep_for(std::chrono::microseconds(sleepTimeUs));
+
+		//check for timeout expired
+		const auto timeNow = std::chrono::high_resolution_clock::now();
+		if (exitTime < timeNow) return SOAPY_SDR_TIMEOUT;
 	}
-
-	return event_code;
-
 }
 
