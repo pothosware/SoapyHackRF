@@ -188,6 +188,7 @@ int SoapyHackRF::activateStream(
 	const long long timeNs,
 	const size_t numElems )
 {
+	if (flags != 0) return SOAPY_SDR_NOT_SUPPORTED;
 	return(0);
 }
 
@@ -197,6 +198,7 @@ int SoapyHackRF::deactivateStream(
 	const int flags,
 	const long long timeNs )
 {
+	if (flags != 0) return SOAPY_SDR_NOT_SUPPORTED;
 	const int direction = *reinterpret_cast<int *>(stream);
 
 
@@ -279,8 +281,11 @@ int SoapyHackRF::readStream(
 	//_buf_mutex.lock();
 	std::unique_lock <std::mutex> lock( _buf_mutex );
 
-	while ( _buf_count < 3 )
-		_buf_cond.wait( lock );
+	while (_buf_count == 0)
+	{
+		_buf_cond.wait_for(lock, std::chrono::microseconds(timeoutUs));
+		if (_buf_count == 0) return SOAPY_SDR_TIMEOUT;
+	}
 
 	if ( !_running )
 		return(SOAPY_SDR_STREAM_ERROR);
@@ -336,7 +341,8 @@ int SoapyHackRF::writeStream(
 
 	while ( _buf_count == _buf_num )
 	{
-		_buf_cond.wait( lock );
+		_buf_cond.wait_for(lock, std::chrono::microseconds(timeoutUs));
+		if (_buf_count == _buf_num) return SOAPY_SDR_TIMEOUT;
 	}
 
 
