@@ -261,7 +261,7 @@ private:
 	uint32_t	_buf_count;
 	uint32_t	_buf_offset;
 
-	int32_t _samp_avail;
+	size_t _samp_avail;
 	bool _overflow;
 	bool _underflow;
 	std::mutex		_buf_mutex;

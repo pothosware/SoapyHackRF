@@ -20,6 +20,7 @@
  */
 
 #include "SoapyHackRF.hpp"
+#include <SoapySDR/Logger.hpp>
 
 int _hackrf_rx_callback( hackrf_transfer *transfer )
 {
@@ -120,6 +121,10 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 		SoapySDR_logf( SOAPY_SDR_INFO, "Start RX" );
 
 		int ret = hackrf_start_rx( _dev, _hackrf_rx_callback, (void *) this );
+		if (ret != HACKRF_SUCCESS)
+		{
+			SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_start_rx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
+		}
 
 		_running = (hackrf_is_streaming( _dev ) == HACKRF_TRUE);
 
@@ -130,6 +135,10 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 		SoapySDR_logf( SOAPY_SDR_INFO, "Start TX" );
 
 		int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *) this );
+		if (ret != HACKRF_SUCCESS)
+		{
+			SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_start_tx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
+		}
 
 		_running = (hackrf_is_streaming( _dev ) == HACKRF_TRUE);
 
@@ -147,6 +156,10 @@ void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 	if ( direction == SOAPY_SDR_RX )
 	{
 		int ret = hackrf_stop_rx( _dev );
+		if (ret != HACKRF_SUCCESS)
+		{
+			SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_stop_rx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
+		}
 
 		_running=false;
 	}
@@ -154,6 +167,10 @@ void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 	if ( direction == SOAPY_SDR_TX )
 	{
 		int ret = hackrf_stop_tx( _dev );
+		if (ret != HACKRF_SUCCESS)
+		{
+			SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_stop_tx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
+		}
 
 		_running=false;
 	}
@@ -199,7 +216,7 @@ int SoapyHackRF::deactivateStream(
 	const long long timeNs )
 {
 	if (flags != 0) return SOAPY_SDR_NOT_SUPPORTED;
-	const int direction = *reinterpret_cast<int *>(stream);
+	//const int direction = *reinterpret_cast<int *>(stream);
 
 
 	/*
