@@ -1,0 +1,5 @@
+soapyhackrf (0.1.0) unstable; urgency=low
+
+  * First release of SoapyHackRF support module
+
+ -- Josh Blum <josh@pothosware.com>  Wed, 30 Sep 2015 16:49:52 -0700
