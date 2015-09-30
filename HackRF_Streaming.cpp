@@ -301,7 +301,7 @@ int SoapyHackRF::readStream(
 	//_buf_mutex.lock();
 	std::unique_lock <std::mutex> lock( _buf_mutex );
 
-	while (_buf_count == 0)
+	while (_buf_count < 3)
 	{
 		_buf_cond.wait_for(lock, std::chrono::microseconds(timeoutUs));
 		if (_buf_count == 0) return SOAPY_SDR_TIMEOUT;
