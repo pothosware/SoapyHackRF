@@ -282,10 +282,11 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 {
 	if ( name == "AMP" )
 	{
-		_amp = value > 0 ? 1 : 0;
+		_amp = value;
+		_amp = (_amp > 0)?10 : 0; //clip to possible values
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_amp_enable( _dev, _amp );
+			int ret = hackrf_set_amp_enable( _dev, (_amp > 0)?1 : 0 );
 			if ( ret != HACKRF_SUCCESS )
 			{
 				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_amp_enable(%f) returned %s", _amp, hackrf_error_name( (hackrf_error) ret ) );
@@ -355,7 +356,7 @@ double SoapyHackRF::getGain( const int direction, const size_t channel, const st
 SoapySDR::Range SoapyHackRF::getGainRange( const int direction, const size_t channel, const std::string &name ) const
 {
 	if ( name == "AMP" )
-		return(SoapySDR::Range( 0, 1 ) );
+		return(SoapySDR::Range( 0, 10 ) );
 	if ( direction == SOAPY_SDR_RX and name == "LNA" )
 		return(SoapySDR::Range( 0, 40 ) );
 	if ( direction == SOAPY_SDR_RX and name == "VGA" )
