@@ -23,6 +23,7 @@
 #include <SoapySDR/Logger.hpp>
 #include <chrono>
 #include <thread>
+#include <algorithm> //min
 
 int _hackrf_rx_callback( hackrf_transfer *transfer )
 {
