@@ -180,10 +180,7 @@ bool SoapyHackRF::getFullDuplex( const int direction, const size_t channel ) con
 std::vector<std::string> SoapyHackRF::listAntennas( const int direction, const size_t channel ) const
 {
 	std::vector<std::string> options;
-	if ( direction == SOAPY_SDR_TX )
-		options.push_back( "TX" );
-	if ( direction == SOAPY_SDR_RX )
-		options.push_back( "RX" );
+	options.push_back( "TX/RX" );
 	return(options);
 }
 
@@ -196,11 +193,7 @@ void SoapyHackRF::setAntenna( const int direction, const size_t channel, const s
 
 std::string SoapyHackRF::getAntenna( const int direction, const size_t channel ) const
 {
-	if ( direction == SOAPY_SDR_TX )
-		return("TX");
-	if ( direction == SOAPY_SDR_RX )
-		return("RX");
-	return("");
+	return("TX/RX");
 }
 
 
