@@ -245,29 +245,9 @@ bool SoapyHackRF::getGainMode( const int direction, const size_t channel ) const
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const double value )
 {
-	if ( direction == SOAPY_SDR_RX )
-	{
-		_rx_vga_gain = value;
-		if ( _dev != NULL )
-		{
-			int ret = hackrf_set_vga_gain( _dev, _rx_vga_gain );
-			if ( ret != HACKRF_SUCCESS )
-			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_vga_gain(%f) returned %s", _rx_vga_gain, hackrf_error_name( (hackrf_error) ret ) );
-			}
-		}
-	}else if ( direction == SOAPY_SDR_TX )
-	{
-		_tx_vga_gain = (uint32_t)value;
-		if ( _dev != NULL )
-		{
-			int ret = hackrf_set_txvga_gain( _dev, _tx_vga_gain );
-			if ( ret != HACKRF_SUCCESS )
-			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_txvga_gain(%f) returned %s", _tx_vga_gain, hackrf_error_name( (hackrf_error) ret ) );
-			}
-		}
-	}
+	//use default gain distribution algorithm
+	//This could be replaced with a more optimized distribution algorithm
+	SoapySDR::Device::setGain(direction, channel, value);
 }
 
 
