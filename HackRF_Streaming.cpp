@@ -58,6 +58,38 @@ int SoapyHackRF::hackrf_rx_callback( int8_t *buffer, int32_t length )
 	return(0);
 }
 
+std::vector<std::string> SoapyHackRF::getStreamFormats(const int direction, const size_t channel) const
+{
+	std::vector<std::string> formats;
+
+	formats.push_back("CS8");
+	formats.push_back("CS16");
+	formats.push_back("CF32");
+
+	return formats;
+}
+
+std::string SoapyHackRF::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
+{
+	fullScale = 128;
+	return "CS8";
+}
+
+SoapySDR::ArgInfoList SoapyHackRF::getStreamArgsInfo(const int direction, const size_t channel) const
+{
+	SoapySDR::ArgInfoList streamArgs;
+
+	SoapySDR::ArgInfo buffersArg;
+	buffersArg.key="buffers";
+	buffersArg.value = std::to_string(_buf_num);
+	buffersArg.name = "Buffer Count";
+	buffersArg.description = "Number of buffers per read.";
+	buffersArg.units = "buffers";
+	buffersArg.type = SoapySDR::ArgInfo::INT;
+	streamArgs.push_back(buffersArg);
+
+	return streamArgs;
+}
 
 int SoapyHackRF::hackrf_tx_callback( int8_t *buffer, int32_t length )
 {
@@ -106,6 +138,21 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 	if ( _running )
 	{
 		std::runtime_error( "setupStream invalid format " );
+	}
+
+
+	if ( args.count( "buffers" ) != 0 )
+	{
+		try
+		{
+			int numBuffers_in = std::stoi(args.at("buffers"));
+			if (numBuffers_in > 0)
+			{
+				_buf_num = numBuffers_in;
+			}
+		}
+		catch (const std::invalid_argument &){}
+
 	}
 
 	_buf_tail = _buf_count = _buf_head = _buf_offset = 0;

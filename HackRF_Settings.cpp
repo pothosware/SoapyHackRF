@@ -75,14 +75,6 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 			throw std::runtime_error("hackrf open failed");
 		}
 	}
-
-	if ( args.count( "buffers" ) != 0 )
-	{
-		_buf_num = std::stoi( args.at( "buffers" ) );
-
-	} else {
-		_buf_num = BUF_NUM;
-	}
 	
 	hackrf_device_list_free(list);
 
@@ -124,7 +116,6 @@ std::string SoapyHackRF::getHardwareKey( void ) const
 SoapySDR::Kwargs SoapyHackRF::getHardwareInfo( void ) const
 {
 	SoapySDR::Kwargs info;
-	info["buffer size"] = std::to_string( _buf_len * _buf_num * 1.0 / 1024 / 1024 ) + "MB";
 
 	char version_str[100];
 
@@ -172,7 +163,46 @@ bool SoapyHackRF::getFullDuplex( const int direction, const size_t channel ) con
 	return(false);
 }
 
+/*******************************************************************
+ * Settings API
+ ******************************************************************/
 
+SoapySDR::ArgInfoList SoapyHackRF::getSettingInfo(void) const
+{
+	SoapySDR::ArgInfoList setArgs;
+
+	SoapySDR::ArgInfo biastxArg;
+	biastxArg.key="bias_tx";
+	biastxArg.value="false";
+	biastxArg.name="antenna bias voltage";
+	biastxArg.description="antenna port power control";
+	biastxArg.type=SoapySDR::ArgInfo::BOOL;
+	setArgs.push_back(biastxArg);
+
+	return setArgs;
+}
+
+void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
+{
+	if(key=="bias_tx"){
+		_bias=(value=="true") ? true : false;
+		int ret=hackrf_set_antenna_enable(_dev,_bias);
+		if(ret!=HACKRF_SUCCESS){
+
+			SoapySDR_logf(SOAPY_SDR_INFO,"Failed to apply antenna bias voltage");
+
+		}
+	}
+
+}
+
+std::string SoapyHackRF::readSetting(const std::string &key) const
+{
+	if (key == "bias_tx") {
+		return _bias?"true":"false";
+	}
+	return "";
+}
 /*******************************************************************
  * Antenna API
  ******************************************************************/
@@ -374,6 +404,12 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 	return(_frequency);
 }
 
+SoapySDR::ArgInfoList SoapyHackRF::getFrequencyArgsInfo(const int direction, const size_t channel) const
+{
+	SoapySDR::ArgInfoList freqArgs;
+	// TODO: frequency arguments
+	return freqArgs;
+}
 
 std::vector<std::string> SoapyHackRF::listFrequencies( const int direction, const size_t channel ) const
 {
