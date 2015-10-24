@@ -174,8 +174,8 @@ SoapySDR::ArgInfoList SoapyHackRF::getSettingInfo(void) const
 	SoapySDR::ArgInfo biastxArg;
 	biastxArg.key="bias_tx";
 	biastxArg.value="false";
-	biastxArg.name="antenna bias voltage";
-	biastxArg.description="antenna port power control";
+	biastxArg.name="Antenna Bias";
+	biastxArg.description="Antenna port power control.";
 	biastxArg.type=SoapySDR::ArgInfo::BOOL;
 	setArgs.push_back(biastxArg);
 
