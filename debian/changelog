@@ -1,3 +1,13 @@
+soapyhackrf (0.2.0) unstable; urgency=low
+
+  * Implemented getStreamFormats() for SoapySDR v0.4
+  * Implemented getNativeStreamFormat() for SoapySDR v0.4
+  * Implemented getStreamArgsInfo() for SoapySDR v0.4
+  * Created settings API calls for Bias TX control
+  * Moved buffers device arg into stream args
+
+ -- Josh Blum <josh@pothosware.com>  Fri, 23 Oct 2015 18:39:30 -0700
+
 soapyhackrf (0.1.0) unstable; urgency=low
 
   * First release of SoapyHackRF support module
