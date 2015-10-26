@@ -275,9 +275,59 @@ bool SoapyHackRF::getGainMode( const int direction, const size_t channel ) const
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const double value )
 {
-	//use default gain distribution algorithm
-	//This could be replaced with a more optimized distribution algorithm
-	SoapySDR::Device::setGain(direction, channel, value);
+	int32_t ret, gain;
+	gain = value;
+
+	if ( direction == SOAPY_SDR_RX )
+	{
+		if ( gain <= 0 )
+		{
+			_rx_lna_gain	= 0;
+			_rx_vga_gain	= 0;
+			_amp		= 0;
+		}else if ( gain <= (HACKRF_RX_LNA_MAX_DB / 2) + (HACKRF_RX_VGA_MAX_DB / 2) )
+		{
+			_rx_vga_gain	= (gain / 3) & ~0x1;
+			_rx_lna_gain	= gain - _rx_vga_gain;
+			_amp		= 0;
+		}else if ( gain <= ( (HACKRF_RX_LNA_MAX_DB / 2) + (HACKRF_RX_VGA_MAX_DB / 2) + HACKRF_AMP_MAX_DB) )
+		{
+			_amp		= HACKRF_AMP_MAX_DB;
+			_rx_vga_gain	= ( (gain - _amp) / 3) & ~0x1;
+			_rx_lna_gain	= gain - _amp - _rx_vga_gain;
+		}else if ( gain <= HACKRF_RX_LNA_MAX_DB + HACKRF_RX_VGA_MAX_DB + HACKRF_AMP_MAX_DB )
+		{
+			_amp		= HACKRF_AMP_MAX_DB;
+			_rx_vga_gain	= (gain - _amp) * double(HACKRF_RX_LNA_MAX_DB) / double(HACKRF_RX_VGA_MAX_DB);
+			_rx_lna_gain	= gain - _amp - _rx_vga_gain;
+		}
+
+		ret	= hackrf_set_lna_gain( _dev, _rx_lna_gain );
+		ret	|= hackrf_set_vga_gain( _dev, _rx_vga_gain );
+		ret	|= hackrf_set_amp_enable( _dev, (_amp > 0) ? 1 : 0 );
+	}else if ( direction == SOAPY_SDR_TX )
+	{
+		if ( gain <= 0 )
+		{
+			_amp		= 0;
+			_tx_vga_gain	= 0;
+		}else if ( gain <= (HACKRF_TX_VGA_MAX_DB / 2) )
+		{
+			_amp		= 0;
+			_tx_vga_gain	= gain;
+		}else if ( gain <= HACKRF_TX_VGA_MAX_DB + HACKRF_AMP_MAX_DB )
+		{
+			_amp		= HACKRF_AMP_MAX_DB;
+			_tx_vga_gain	= gain - HACKRF_AMP_MAX_DB;
+		}
+
+		ret	= hackrf_set_txvga_gain( _dev, _tx_vga_gain );
+		ret	|= hackrf_set_amp_enable( _dev, (_amp > 0) ? 1 : 0 );
+	}
+	if ( ret != HACKRF_SUCCESS )
+	{
+		SoapySDR::logf( SOAPY_SDR_ERROR, "setGain(%f) returned %s", value, hackrf_error_name( (hackrf_error) ret ) );
+	}
 }
 
 
@@ -286,7 +336,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 	if ( name == "AMP" )
 	{
 		_amp = value;
-		_amp = (_amp > 0)?10 : 0; //clip to possible values
+		_amp = (_amp > 0)?HACKRF_AMP_MAX_DB : 0; //clip to possible values
 		if ( _dev != NULL )
 		{
 			int ret = hackrf_set_amp_enable( _dev, (_amp > 0)?1 : 0 );
@@ -359,13 +409,13 @@ double SoapyHackRF::getGain( const int direction, const size_t channel, const st
 SoapySDR::Range SoapyHackRF::getGainRange( const int direction, const size_t channel, const std::string &name ) const
 {
 	if ( name == "AMP" )
-		return(SoapySDR::Range( 0, 10 ) );
+		return(SoapySDR::Range( 0, HACKRF_AMP_MAX_DB ) );
 	if ( direction == SOAPY_SDR_RX and name == "LNA" )
-		return(SoapySDR::Range( 0, 40 ) );
+		return(SoapySDR::Range( 0, HACKRF_RX_LNA_MAX_DB ) );
 	if ( direction == SOAPY_SDR_RX and name == "VGA" )
-		return(SoapySDR::Range( 0, 62 ) );
+		return(SoapySDR::Range( 0, HACKRF_RX_VGA_MAX_DB ) );
 	if ( direction == SOAPY_SDR_TX and name == "VGA" )
-		return(SoapySDR::Range( 0, 47 ) );
+		return(SoapySDR::Range( 0, HACKRF_TX_VGA_MAX_DB ) );
 	return(SoapySDR::Range( 0, 0 ) );
 }
 
@@ -443,7 +493,7 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 
 		if(_auto_bandwidth){
 
-			_bandwidth=_samplerate;
+			_bandwidth=hackrf_compute_baseband_filter_bw_round_down_lt(_samplerate);
 
 			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
 		}
@@ -476,7 +526,7 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
-	_bandwidth = bw;
+	_bandwidth = hackrf_compute_baseband_filter_bw(bw);
 
 	if(_bandwidth!=0){
 		_auto_bandwidth=false;

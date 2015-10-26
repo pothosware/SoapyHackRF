@@ -30,6 +30,10 @@
 #define BUF_LEN			262144
 #define BUF_NUM			15
 #define BYTES_PER_SAMPLE	2
+#define HACKRF_RX_VGA_MAX_DB 62
+#define HACKRF_TX_VGA_MAX_DB 47
+#define HACKRF_RX_LNA_MAX_DB 40
+#define HACKRF_AMP_MAX_DB 14
 
 enum HackRF_Format {
 	HACKRF_FORMAT_FLOAT32	=0,
