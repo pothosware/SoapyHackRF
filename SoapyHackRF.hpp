@@ -144,6 +144,36 @@ public:
 			const long timeoutUs
 	);
 
+
+	int acquireReadBuffer(
+			SoapySDR::Stream *stream,
+			size_t &handle,
+			const void **buffs,
+			int &flags,
+			long long &timeNs,
+			const long timeoutUs = 100000);
+
+	void releaseReadBuffer(
+			SoapySDR::Stream *stream,
+			const size_t handle);
+
+	int acquireWriteBuffer(
+			SoapySDR::Stream *stream,
+			size_t &handle,
+			void **buffs,
+			const long timeoutUs = 100000);
+
+	void releaseWriteBuffer(
+			SoapySDR::Stream *stream,
+			const size_t handle,
+			const size_t numElems,
+			int &flags,
+			const long long timeNs = 0);
+
+	size_t getNumDirectAccessBuffers(SoapySDR::Stream *stream);
+
+	int getDirectAccessBufferAddrs(SoapySDR::Stream *stream, const size_t handle, void **buffs);
+
 	/*******************************************************************
 	 * Settings API
 	 ******************************************************************/
@@ -285,9 +315,12 @@ private:
 	uint32_t	_buf_head;
 	uint32_t	_buf_tail;
 	uint32_t	_buf_count;
-	uint32_t	_buf_offset;
 
-	size_t _samp_avail;
+	int32_t _remainderHandle;
+	size_t _remainderSamps;
+	size_t _remainderOffset;
+	int8_t* _remainderBuff;
+
 	bool _overflow;
 	bool _underflow;
 	std::mutex		_buf_mutex;
