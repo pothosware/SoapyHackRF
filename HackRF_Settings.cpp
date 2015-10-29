@@ -24,7 +24,8 @@
 
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
-	_running	= false;
+
+	_current_mode=TRANSCEIVER_MODE_OFF;
 
 	_auto_bandwidth=true;
 	
@@ -46,8 +47,6 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	_id = -1;
 
-	_buf_num	= BUF_NUM;
-	_buf_len	= BUF_LEN;
 
 	hackrf_device_list_t	* list = hackrf_device_list();
 

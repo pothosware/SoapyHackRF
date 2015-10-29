@@ -41,6 +41,29 @@ enum HackRF_Format {
 	HACKRF_FORMAT_INT8	=2,
 };
 
+struct SoapyHackRFStream
+{
+	uint32_t	_buf_num;
+	uint32_t	_buf_len;
+	uint32_t 	_format;
+	int8_t		**_buf;
+	uint32_t	_buf_head;
+	uint32_t	_buf_tail;
+	uint32_t	_buf_count;
+
+	int32_t _remainderHandle;
+	size_t _remainderSamps;
+	size_t _remainderOffset;
+	int8_t* _remainderBuff;
+
+	int32_t  _direction;
+	bool _overflow;
+	bool _underflow;
+	std::mutex		_buf_mutex;
+	std::condition_variable _buf_cond;
+
+};
+
 /*!
  * The session object manages hackrf_init/exit
  * with a process-wide reference count.
@@ -283,7 +306,6 @@ public:
 
 
 private:
-	bool _running;
 
 	bool _auto_bandwidth;
 
@@ -305,26 +327,9 @@ private:
 
 	uint8_t _amp;
 
-	uint32_t _format;
-
 	int32_t _id;
 
-	int8_t		**_buf;
-	uint32_t	_buf_num;
-	uint32_t	_buf_len;
-	uint32_t	_buf_head;
-	uint32_t	_buf_tail;
-	uint32_t	_buf_count;
-
-	int32_t _remainderHandle;
-	size_t _remainderSamps;
-	size_t _remainderOffset;
-	int8_t* _remainderBuff;
-
-	bool _overflow;
-	bool _underflow;
-	std::mutex		_buf_mutex;
-	std::condition_variable _buf_cond;
+	transceiver_mode_t _current_mode;
 
 	SoapyHackRFSession _sess;
 };
