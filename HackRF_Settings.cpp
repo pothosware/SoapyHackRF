@@ -527,7 +527,7 @@ void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const
 {
 	_bandwidth = hackrf_compute_baseband_filter_bw(bw);
 
-	if(_bandwidth!=0){
+	if(bw > 0){
 		_auto_bandwidth=false;
 
 		if ( _dev != NULL )

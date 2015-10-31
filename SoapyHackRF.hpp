@@ -20,7 +20,7 @@
  */
 
 #pragma once
-#include <libhackrf/hackrf.h>
+#include <hackrf.h>
 #include <string.h>
 #include <mutex>
 #include <condition_variable>
@@ -39,6 +39,7 @@ enum HackRF_Format {
 	HACKRF_FORMAT_FLOAT32	=0,
 	HACKRF_FORMAT_INT16	=1,
 	HACKRF_FORMAT_INT8	=2,
+	HACKRF_FORMAT_FLOAT64 =3,
 };
 
 struct SoapyHackRFStream
@@ -59,6 +60,11 @@ struct SoapyHackRFStream
 	int32_t  _direction;
 	bool _overflow;
 	bool _underflow;
+
+	bool _burst_end;
+	size_t _burst_samps;
+	int8_t* _burst_buf;
+
 	std::mutex		_buf_mutex;
 	std::condition_variable _buf_cond;
 
