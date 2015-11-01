@@ -216,10 +216,11 @@ int SoapyHackRF::activateStream(
 	if(data->_direction==SOAPY_SDR_RX){
 
 		if(_current_mode==TRANSCEIVER_MODE_RX)
-			return SOAPY_SDR_STREAM_ERROR;
+			return 0;
 
 		if(_current_mode==TRANSCEIVER_MODE_TX){
 			hackrf_stop_tx(_dev);
+
 		}
 
 		SoapySDR_logf(SOAPY_SDR_DEBUG, "Start RX");
@@ -237,30 +238,29 @@ int SoapyHackRF::activateStream(
 			info=this->getHardwareInfo();
 			hackrf_close(_dev);
 
-			ret=hackrf_open_by_serial(info["serial"].c_str(),&_dev);
-			ret|=hackrf_set_freq(_dev,_frequency);
-			ret|=hackrf_set_sample_rate(_dev,_samplerate);
-			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
-			ret|=hackrf_set_amp_enable(_dev,_amp);
-			ret|=hackrf_set_lna_gain(_dev,_rx_lna_gain);
-			ret|=hackrf_set_vga_gain(_dev,_rx_vga_gain);
-			ret|=hackrf_start_rx(_dev,_hackrf_rx_callback,(void *) data);
-			ret|=hackrf_is_streaming(_dev);
+			hackrf_open_by_serial(info["serial"].c_str(),&_dev);
+			hackrf_set_freq(_dev,_frequency);
+			hackrf_set_sample_rate(_dev,_samplerate);
+			hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
+			hackrf_set_amp_enable(_dev,_amp);
+			hackrf_set_lna_gain(_dev,_rx_lna_gain);
+			hackrf_set_vga_gain(_dev,_rx_vga_gain);
+			hackrf_start_rx(_dev,_hackrf_rx_callback,(void *) data);
+			ret=hackrf_is_streaming(_dev);
 		}
 		if(ret!=HACKRF_TRUE){
 			SoapySDR_logf(SOAPY_SDR_ERROR,"Activate RX Stream Failed.");
-			throw std::runtime_error("Activate RX Stream Failed.");
+			return SOAPY_SDR_STREAM_ERROR;
 
 		}else {
 			_current_mode = TRANSCEIVER_MODE_RX;
 		}
-
 	}
 
 	if(data->_direction==SOAPY_SDR_TX ){
 
 		if(_current_mode==TRANSCEIVER_MODE_TX)
-			return SOAPY_SDR_STREAM_ERROR;
+			return 0;
 
 		if(_current_mode==TRANSCEIVER_MODE_RX){
 			hackrf_stop_rx(_dev);
@@ -282,19 +282,20 @@ int SoapyHackRF::activateStream(
 			info=this->getHardwareInfo();
 			hackrf_close(_dev);
 
-			ret=hackrf_open_by_serial(info["serial"].c_str(),&_dev);
-			ret|=hackrf_set_freq(_dev,_frequency);
-			ret|=hackrf_set_sample_rate(_dev,_samplerate);
-			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
-			ret|=hackrf_set_amp_enable(_dev,_amp);
-			ret|=hackrf_set_txvga_gain(_dev,_tx_vga_gain);
-			ret|=hackrf_set_antenna_enable(_dev,_bias);
-			ret|=hackrf_start_tx(_dev,_hackrf_rx_callback,(void *) data);
-			ret|=hackrf_is_streaming(_dev);
+			hackrf_open_by_serial(info["serial"].c_str(),&_dev);
+			hackrf_set_freq(_dev,_frequency);
+			hackrf_set_sample_rate(_dev,_samplerate);
+			hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
+			hackrf_set_amp_enable(_dev,_amp);
+			hackrf_set_txvga_gain(_dev,_tx_vga_gain);
+			hackrf_set_antenna_enable(_dev,_bias);
+			hackrf_start_tx(_dev,_hackrf_tx_callback,(void *) data);
+			ret=hackrf_is_streaming(_dev);
 		}
 		if(ret!=HACKRF_TRUE){
+
 			SoapySDR_logf(SOAPY_SDR_ERROR,"Activate TX Stream Failed.");
-			throw std::runtime_error("Activate TX Stream Failed.");
+			return SOAPY_SDR_STREAM_ERROR;
 		}else {
 			_current_mode = TRANSCEIVER_MODE_TX;
 		}
