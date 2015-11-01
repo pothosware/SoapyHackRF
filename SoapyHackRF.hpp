@@ -158,12 +158,12 @@ public:
 
 
 	int writeStream(
-		SoapySDR::Stream *stream,
-		void * const *buffs,
-		const size_t numElems,
-		int &flags,
-		long long &timeNs,
-		const long timeoutUs = 100000 );
+			SoapySDR::Stream *stream,
+			const void * const *buffs,
+			const size_t numElems,
+			int &flags,
+			const long long timeNs = 0,
+			const long timeoutUs = 100000);
 
 	int readStreamStatus(
 			SoapySDR::Stream *stream,

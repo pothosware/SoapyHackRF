@@ -118,18 +118,18 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 	if ( format == "CS8" )
 	{
-		SoapySDR_log( SOAPY_SDR_INFO, "Using format CS8." );
+		SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CS8." );
 		data->_format = HACKRF_FORMAT_INT8;
 	}else if ( format == "CS16" )
 	{
-		SoapySDR_log( SOAPY_SDR_INFO, "Using format CS16." );
+		SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CS16." );
 		data->_format = HACKRF_FORMAT_INT16;
 	}else if ( format == "CF32" )
 	{
-		SoapySDR_log( SOAPY_SDR_INFO, "Using format CF32." );
+		SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CF32." );
 		data->_format= HACKRF_FORMAT_FLOAT32;
 	}else if(format=="CF64"){
-		SoapySDR_log( SOAPY_SDR_INFO, "Using format CF64." );
+		SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CF64." );
 		data->_format= HACKRF_FORMAT_FLOAT64;
 	}else throw std::runtime_error( "setupStream invalid format " + format );
 
@@ -222,7 +222,7 @@ int SoapyHackRF::activateStream(
 			hackrf_stop_tx(_dev);
 		}
 
-		SoapySDR_logf(SOAPY_SDR_INFO, "Start RX");
+		SoapySDR_logf(SOAPY_SDR_DEBUG, "Start RX");
 
 		int ret = hackrf_start_rx(_dev, _hackrf_rx_callback, (void *) data);
 		if (ret != HACKRF_SUCCESS) {
@@ -266,7 +266,7 @@ int SoapyHackRF::activateStream(
 			hackrf_stop_rx(_dev);
 		}
 
-		SoapySDR_logf( SOAPY_SDR_INFO, "Start TX" );
+		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start TX" );
 
 		int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *) data );
 		if (ret != HACKRF_SUCCESS)
@@ -377,7 +377,7 @@ void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,size_t offse
 }
 
 
-void writebuf(void * src, int8_t* dst, uint32_t len,uint32_t format,size_t offset) {
+void writebuf(const void * src, int8_t* dst, uint32_t len,uint32_t format,size_t offset) {
 	if(format==HACKRF_FORMAT_INT8){
 		int8_t *samples_cs8=(int8_t *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
@@ -476,12 +476,12 @@ int SoapyHackRF::readStream(
 
 
 int SoapyHackRF::writeStream(
-	SoapySDR::Stream *stream,
-	void * const *buffs,
-	const size_t numElems,
-	int &flags,
-	long long &timeNs,
-	const long timeoutUs )
+		SoapySDR::Stream *stream,
+		const void * const *buffs,
+		const size_t numElems,
+		int &flags,
+		const long long timeNs,
+		const long timeoutUs )
 {
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
 
