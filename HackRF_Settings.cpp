@@ -25,43 +25,79 @@
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
 
+	_rx_stream=new RXStream();
+
+	_rx_stream->remainderSamps=0;
+	_rx_stream->remainderOffset=0;
+	_rx_stream->remainderBuff= nullptr;
+	_rx_stream->remainderHandle=-1;
+	_rx_stream->vga_gain=16;
+	_rx_stream->lna_gain=16;
+	_rx_stream->amp_gain=0;
+	_rx_stream->frequecy=0;
+	_rx_stream->samplerate=0;
+	_rx_stream->bandwidth=0;
+	_rx_stream->format=HACKRF_FORMAT_INT8;
+	_rx_stream->buf_len=BUF_LEN;
+	_rx_stream->buf_num=BUF_NUM;
+	_rx_stream->buf_count=0;
+	_rx_stream->buf_tail=0;
+	_rx_stream->buf_head=0;
+
+	_tx_stream=new TXStream();
+
+	_tx_stream->remainderSamps=0;
+	_tx_stream->remainderOffset=0;
+	_tx_stream->remainderBuff= nullptr;
+	_tx_stream->remainderHandle=-1;
+	_tx_stream->vga_gain=0;
+	_tx_stream->amp_gain=0;
+	_tx_stream->frequecy=0;
+	_tx_stream->samplerate=0;
+	_tx_stream->bandwidth=0;
+	_tx_stream->format=HACKRF_FORMAT_INT8;
+	_tx_stream->buf_len=BUF_LEN;
+	_tx_stream->buf_num=BUF_NUM;
+	_tx_stream->buf_count=0;
+	_tx_stream->buf_tail=0;
+	_tx_stream->buf_head=0;
+	_tx_stream->burst_head=0;
+	_tx_stream->burst_samps=0;
+	_tx_stream->burst_end=false;
+
 	_current_mode=TRANSCEIVER_MODE_OFF;
 
 	_auto_bandwidth=true;
-	
-	_dev		= NULL;
 
-	_rx_vga_gain = 20;
+	_dev		= nullptr;
 
-	_rx_lna_gain = 16;
+	_list= nullptr;
 
-	_tx_vga_gain = 0;
+	_current_amp = 0;
 
-	_amp = 0;
+	_current_frequency = 0;
 
-	_frequency = 1000000;
+	_current_samplerate = 0;
 
-	_samplerate = 2000000;
-
-	_bandwidth=0;
+	_current_bandwidth=0;
 
 	_id = -1;
 
 
-	hackrf_device_list_t	* list = hackrf_device_list();
+	_list= hackrf_device_list();
 
 	if ( args.count( "hackrf" ) != 0 )
 	{
-		int _id = std::stoi( args.at( "hackrf" ) );
-		
-		if ( _id < 0 && _id > list->devicecount )
+		_id = std::stoi( args.at( "hackrf" ) );
+
+		if ( _id < 0 && _id > _list->devicecount )
 		{
-			throw std::runtime_error( "hackrf out of range [0 .. " + std::to_string( list->devicecount ) + "]." );
+			throw std::runtime_error( "hackrf out of range [0 .. " + std::to_string( _list->devicecount ) + "]." );
 		}
-		int ret = hackrf_device_list_open(list, _id, &_dev );
+		int ret = hackrf_device_list_open(_list, _id, &_dev );
 		if ( ret != HACKRF_SUCCESS )
 		{
-			hackrf_device_list_free(list);
+			hackrf_device_list_free(_list);
 			SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device by Index:%d", _id );
 			throw std::runtime_error("hackrf open failed");
 		}
@@ -74,8 +110,8 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 			throw std::runtime_error("hackrf open failed");
 		}
 	}
-	
-	hackrf_device_list_free(list);
+
+
 
 }
 
@@ -84,7 +120,48 @@ SoapyHackRF::~SoapyHackRF( void )
 {
 	if ( _dev )
 	{
+		hackrf_device_list_free(_list);
 		hackrf_close( _dev );
+	}
+
+
+	if (_rx_stream){
+
+
+		if ( _rx_stream->buf )
+		{
+			for ( unsigned int i = 0; i < _rx_stream->buf_num; ++i )
+			{
+				if ( _rx_stream->buf[i] )
+				{
+					free( _rx_stream->buf[i] );
+				}
+			}
+			free( _rx_stream->buf );
+			_rx_stream->buf = NULL;
+		}
+
+		delete _rx_stream;
+	}
+
+
+	if (_tx_stream){
+
+
+		if ( _tx_stream->buf )
+		{
+			for ( unsigned int i = 0; i < _tx_stream->buf_num; ++i )
+			{
+				if ( _tx_stream->buf[i] )
+				{
+					free( _tx_stream->buf[i] );
+				}
+			}
+			free( _tx_stream->buf );
+			_tx_stream->buf = NULL;
+		}
+
+		delete _tx_stream;
 	}
 
 	/* cleanup device handles */
@@ -184,8 +261,8 @@ SoapySDR::ArgInfoList SoapyHackRF::getSettingInfo(void) const
 void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 {
 	if(key=="bias_tx"){
-		_bias=(value=="true") ? true : false;
-		int ret=hackrf_set_antenna_enable(_dev,_bias);
+		_tx_stream->bias=(value=="true") ? true : false;
+		int ret=hackrf_set_antenna_enable(_dev,_tx_stream->bias);
 		if(ret!=HACKRF_SUCCESS){
 
 			SoapySDR_logf(SOAPY_SDR_INFO,"Failed to apply antenna bias voltage");
@@ -198,7 +275,7 @@ void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 std::string SoapyHackRF::readSetting(const std::string &key) const
 {
 	if (key == "bias_tx") {
-		return _bias?"true":"false";
+		return _tx_stream->bias?"true":"false";
 	}
 	return "";
 }
@@ -281,47 +358,51 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 	{
 		if ( gain <= 0 )
 		{
-			_rx_lna_gain	= 0;
-			_rx_vga_gain	= 0;
-			_amp		= 0;
+			_rx_stream->lna_gain	= 0;
+			_rx_stream->vga_gain	= 0;
+			_current_amp		= 0;
 		}else if ( gain <= (HACKRF_RX_LNA_MAX_DB / 2) + (HACKRF_RX_VGA_MAX_DB / 2) )
 		{
-			_rx_vga_gain	= (gain / 3) & ~0x1;
-			_rx_lna_gain	= gain - _rx_vga_gain;
-			_amp		= 0;
+			_rx_stream->vga_gain	= (gain / 3) & ~0x1;
+			_rx_stream->lna_gain	= gain - _rx_stream->vga_gain;
+			_current_amp		= 0;
 		}else if ( gain <= ( (HACKRF_RX_LNA_MAX_DB / 2) + (HACKRF_RX_VGA_MAX_DB / 2) + HACKRF_AMP_MAX_DB) )
 		{
-			_amp		= HACKRF_AMP_MAX_DB;
-			_rx_vga_gain	= ( (gain - _amp) / 3) & ~0x1;
-			_rx_lna_gain	= gain - _amp - _rx_vga_gain;
+			_current_amp		= HACKRF_AMP_MAX_DB;
+			_rx_stream->vga_gain	= ( (gain - _current_amp) / 3) & ~0x1;
+			_rx_stream->lna_gain	= gain -_current_amp - _rx_stream->vga_gain;
 		}else if ( gain <= HACKRF_RX_LNA_MAX_DB + HACKRF_RX_VGA_MAX_DB + HACKRF_AMP_MAX_DB )
 		{
-			_amp		= HACKRF_AMP_MAX_DB;
-			_rx_vga_gain	= (gain - _amp) * double(HACKRF_RX_LNA_MAX_DB) / double(HACKRF_RX_VGA_MAX_DB);
-			_rx_lna_gain	= gain - _amp - _rx_vga_gain;
+			_current_amp		= HACKRF_AMP_MAX_DB;
+			_rx_stream->vga_gain	= (gain - _current_amp) * double(HACKRF_RX_LNA_MAX_DB) / double(HACKRF_RX_VGA_MAX_DB);
+			_rx_stream->lna_gain	= gain - _current_amp - _rx_stream->vga_gain;
 		}
 
-		ret	= hackrf_set_lna_gain( _dev, _rx_lna_gain );
-		ret	|= hackrf_set_vga_gain( _dev, _rx_vga_gain );
-		ret	|= hackrf_set_amp_enable( _dev, (_amp > 0) ? 1 : 0 );
+		_rx_stream->amp_gain=_current_amp;
+
+		ret	= hackrf_set_lna_gain( _dev, _rx_stream->lna_gain );
+		ret	|= hackrf_set_vga_gain( _dev, _rx_stream->vga_gain );
+		ret	|= hackrf_set_amp_enable( _dev, (_current_amp > 0) ? 1 : 0 );
 	}else if ( direction == SOAPY_SDR_TX )
 	{
 		if ( gain <= 0 )
 		{
-			_amp		= 0;
-			_tx_vga_gain	= 0;
+			_current_amp		= 0;
+			_tx_stream->vga_gain	= 0;
 		}else if ( gain <= (HACKRF_TX_VGA_MAX_DB / 2) )
 		{
-			_amp		= 0;
-			_tx_vga_gain	= gain;
+			_current_amp		= 0;
+			_tx_stream->vga_gain	= gain;
 		}else if ( gain <= HACKRF_TX_VGA_MAX_DB + HACKRF_AMP_MAX_DB )
 		{
-			_amp		= HACKRF_AMP_MAX_DB;
-			_tx_vga_gain	= gain - HACKRF_AMP_MAX_DB;
+			_current_amp		= HACKRF_AMP_MAX_DB;
+			_tx_stream->vga_gain	= gain - HACKRF_AMP_MAX_DB;
 		}
 
-		ret	= hackrf_set_txvga_gain( _dev, _tx_vga_gain );
-		ret	|= hackrf_set_amp_enable( _dev, (_amp > 0) ? 1 : 0 );
+		_tx_stream->amp_gain=_current_amp;
+
+		ret	= hackrf_set_txvga_gain( _dev, _tx_stream->vga_gain );
+		ret	|= hackrf_set_amp_enable( _dev, (_current_amp > 0) ? 1 : 0 );
 	}
 	if ( ret != HACKRF_SUCCESS )
 	{
@@ -334,47 +415,54 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 {
 	if ( name == "AMP" )
 	{
-		_amp = value;
-		_amp = (_amp > 0)?HACKRF_AMP_MAX_DB : 0; //clip to possible values
+		_current_amp = value;
+		_current_amp = (_current_amp > 0)?HACKRF_AMP_MAX_DB : 0; //clip to possible values
+
+		if(direction == SOAPY_SDR_RX){
+			_rx_stream->amp_gain=_current_amp;
+		}else if (direction ==SOAPY_SDR_TX){
+			_tx_stream->amp_gain=_current_amp;
+		}
+
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_amp_enable( _dev, (_amp > 0)?1 : 0 );
+			int ret = hackrf_set_amp_enable( _dev, (_current_amp > 0)?1 : 0 );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_amp_enable(%f) returned %s", _amp, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_amp_enable(%f) returned %s", _current_amp, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}else if ( direction == SOAPY_SDR_RX and name == "LNA" )
 	{
-		_rx_lna_gain = value;
+		_rx_stream->lna_gain = value;
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_lna_gain( _dev, _rx_lna_gain );
+			int ret = hackrf_set_lna_gain( _dev, _rx_stream->lna_gain );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_lna_gain(%f) returned %s", _rx_lna_gain, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_lna_gain(%f) returned %s", _rx_stream->lna_gain, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}else if ( direction == SOAPY_SDR_RX and name == "VGA" )
 	{
-		_rx_vga_gain = value;
+		_rx_stream->vga_gain = value;
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_vga_gain( _dev, _rx_vga_gain );
+			int ret = hackrf_set_vga_gain( _dev, _rx_stream->vga_gain );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_vga_gain(%f) returned %s", _rx_vga_gain, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_vga_gain(%f) returned %s", _rx_stream->vga_gain, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}else if ( direction == SOAPY_SDR_TX and name == "VGA" )
 	{
-		_tx_vga_gain = value;
+		_tx_stream->vga_gain = value;
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_txvga_gain( _dev, _tx_vga_gain );
+			int ret = hackrf_set_txvga_gain( _dev, _tx_stream->vga_gain );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_txvga_gain(%f) returned %s", _tx_vga_gain, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_txvga_gain(%f) returned %s", _tx_stream->vga_gain, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}
@@ -387,18 +475,21 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 double SoapyHackRF::getGain( const int direction, const size_t channel, const std::string &name ) const
 {
 	double gain = 0.0;
-	if ( name == "AMP" )
+	if ( direction == SOAPY_SDR_RX and name == "AMP" )
 	{
-		gain = _amp;
+		gain = -_rx_stream->amp_gain;
+	}else if ( direction == SOAPY_SDR_TX and name == "AMP" )
+	{
+		gain = _tx_stream->amp_gain;
 	}else if ( direction == SOAPY_SDR_RX and name == "LNA" )
 	{
-		gain = _rx_lna_gain;
+		gain = _rx_stream->lna_gain;
 	}else if ( direction == SOAPY_SDR_RX and name == "VGA" )
 	{
-		gain = _rx_vga_gain;
+		gain = _rx_stream->vga_gain;
 	}else if ( direction == SOAPY_SDR_TX and name == "VGA" )
 	{
-		gain = _tx_vga_gain;
+		gain = _tx_stream->vga_gain;
 	}
 
 	return(gain);
@@ -430,15 +521,25 @@ void SoapyHackRF::setFrequency( const int direction, const size_t channel, const
 	if ( name != "RF" )
 		throw std::runtime_error( "setFrequency(" + name + ") unknown name" );
 
-	_frequency = frequency;
+	_current_frequency = frequency;
+
+
+	if(direction==SOAPY_SDR_RX){
+
+		_rx_stream->frequecy=_current_frequency;
+	}
+	if(direction==SOAPY_SDR_TX){
+
+		_tx_stream->frequecy=_current_frequency;
+	}
 
 	if ( _dev != NULL )
 	{
-		int ret = hackrf_set_freq( _dev, _frequency );
+		int ret = hackrf_set_freq( _dev, _current_frequency );
 
 		if ( ret != HACKRF_SUCCESS )
 		{
-			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_freq(%f) returned %s", _frequency, hackrf_error_name( (hackrf_error) ret ) );
+			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_freq(%f) returned %s", _current_frequency, hackrf_error_name( (hackrf_error) ret ) );
 		}
 	}
 }
@@ -450,7 +551,18 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 		return(0.0);
 	if ( name != "RF" )
 		throw std::runtime_error( "getFrequency(" + name + ") unknown name" );
-	return(_frequency);
+
+	double freq;
+
+	if(direction==SOAPY_SDR_RX){
+
+		freq = _rx_stream->frequecy;
+	}
+	if(direction==SOAPY_SDR_TX){
+
+		freq = _tx_stream->frequecy;
+	}
+	return(freq);
 }
 
 SoapySDR::ArgInfoList SoapyHackRF::getFrequencyArgsInfo(const int direction, const size_t channel) const
@@ -484,22 +596,41 @@ SoapySDR::RangeList SoapyHackRF::getFrequencyRange( const int direction, const s
 
 void SoapyHackRF::setSampleRate( const int direction, const size_t channel, const double rate )
 {
-	_samplerate = rate;
+	_current_samplerate = rate;
+
+	if(direction==SOAPY_SDR_RX){
+
+		_rx_stream->samplerate=_current_samplerate;
+	}
+	if(direction==SOAPY_SDR_TX){
+
+		_tx_stream->samplerate=_current_samplerate;
+	}
 
 	if ( _dev != NULL )
 	{
-		int ret = hackrf_set_sample_rate( _dev, _samplerate );
+		int ret = hackrf_set_sample_rate( _dev, _current_samplerate );
 
 		if(_auto_bandwidth){
 
-			_bandwidth=hackrf_compute_baseband_filter_bw_round_down_lt(_samplerate);
+			_current_bandwidth=hackrf_compute_baseband_filter_bw_round_down_lt(_current_samplerate);
 
-			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_bandwidth);
+
+			if(direction==SOAPY_SDR_RX){
+
+				_rx_stream->bandwidth=_current_bandwidth;
+			}
+			if(direction==SOAPY_SDR_TX){
+
+				_tx_stream->bandwidth=_current_bandwidth;
+			}
+
+			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
 		}
 
 		if ( ret != HACKRF_SUCCESS )
 		{
-			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_sample_rate(%f) returned %s", _samplerate, hackrf_error_name( (hackrf_error) ret ) );
+			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_sample_rate(%f) returned %s", _current_samplerate, hackrf_error_name( (hackrf_error) ret ) );
 			throw std::runtime_error( "setSampleRate()" );
 		}
 	}
@@ -508,7 +639,17 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 
 double SoapyHackRF::getSampleRate( const int direction, const size_t channel ) const
 {
-	return(_samplerate);
+	double samp;
+	if(direction==SOAPY_SDR_RX){
+
+		samp= _rx_stream->samplerate;
+	}
+	if(direction==SOAPY_SDR_TX){
+
+		samp= _tx_stream->samplerate;
+	}
+
+	return(samp);
 }
 
 
@@ -525,17 +666,26 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
-	_bandwidth = hackrf_compute_baseband_filter_bw(bw);
+	_current_bandwidth = hackrf_compute_baseband_filter_bw(bw);
 
-	if(bw > 0){
+	if(direction==SOAPY_SDR_RX){
+
+		_rx_stream->bandwidth=_current_bandwidth;
+	}
+	if(direction==SOAPY_SDR_TX){
+
+		_tx_stream->bandwidth=_current_bandwidth;
+	}
+
+	if(_current_bandwidth > 0){
 		_auto_bandwidth=false;
 
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_baseband_filter_bandwidth( _dev, _bandwidth );
+			int ret = hackrf_set_baseband_filter_bandwidth( _dev, _current_bandwidth );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_baseband_filter_bandwidth(%f) returned %s", _bandwidth, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_baseband_filter_bandwidth(%f) returned %s", _current_bandwidth, hackrf_error_name( (hackrf_error) ret ) );
 				throw std::runtime_error( "setBandwidth()" );
 			}
 		}
@@ -549,7 +699,17 @@ void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const
 
 double SoapyHackRF::getBandwidth( const int direction, const size_t channel ) const
 {
-	return(_bandwidth);
+	double bw;
+	if(direction==SOAPY_SDR_RX){
+
+		bw = _rx_stream->bandwidth;
+	}
+	if(direction==SOAPY_SDR_TX){
+
+		bw = _tx_stream->bandwidth;
+	}
+
+	return (bw);
 }
 
 

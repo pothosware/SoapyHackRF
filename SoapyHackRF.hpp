@@ -42,33 +42,6 @@ enum HackRF_Format {
 	HACKRF_FORMAT_FLOAT64 =3,
 };
 
-struct SoapyHackRFStream
-{
-	uint32_t	_buf_num;
-	uint32_t	_buf_len;
-	uint32_t 	_format;
-	int8_t		**_buf;
-	uint32_t	_buf_head;
-	uint32_t	_buf_tail;
-	uint32_t	_buf_count;
-
-	int32_t _remainderHandle;
-	size_t _remainderSamps;
-	size_t _remainderOffset;
-	int8_t* _remainderBuff;
-
-	int32_t  _direction;
-	bool _overflow;
-	bool _underflow;
-
-	bool _burst_end;
-	size_t _burst_samps;
-	int8_t* _burst_buf;
-
-	std::mutex		_buf_mutex;
-	std::condition_variable _buf_cond;
-
-};
 
 /*!
  * The session object manages hackrf_init/exit
@@ -301,39 +274,101 @@ public:
 
 	std::vector<double> listBandwidths( const int direction, const size_t channel ) const;
 
-
 	/*******************************************************************
-	 * HackRF callback
-	 ******************************************************************/
+ 	 * HackRF callback
+ 	 ******************************************************************/
 	int hackrf_tx_callback( int8_t *buffer, int32_t length );
 
 
 	int hackrf_rx_callback( int8_t *buffer, int32_t length );
 
 
+
+
 private:
+
+	struct RXStream{
+		uint32_t vga_gain;
+		uint32_t lna_gain;
+		uint8_t amp_gain;
+		double samplerate;
+		uint32_t bandwidth;
+		uint64_t frequecy;
+
+		int32_t remainderHandle;
+		size_t remainderSamps;
+		size_t remainderOffset;
+		int8_t* remainderBuff;
+		uint32_t format;
+
+		uint32_t	buf_num;
+		uint32_t	buf_len;
+		int8_t		**buf;
+		uint32_t	buf_head;
+		uint32_t	buf_tail;
+		uint32_t	buf_count;
+
+		bool overflow;
+	} ;
+
+
+	struct TXStream{
+		uint32_t vga_gain;
+		uint8_t amp_gain;
+		double samplerate;
+		uint32_t bandwidth;
+		uint64_t frequecy;
+		bool bias;
+
+		int32_t remainderHandle;
+		size_t remainderSamps;
+		size_t remainderOffset;
+		int8_t* remainderBuff;
+		uint32_t format;
+
+		uint32_t	buf_num;
+		uint32_t	buf_len;
+		int8_t		**buf;
+		uint32_t	buf_head;
+		uint32_t	buf_tail;
+		uint32_t	buf_count;
+		bool underflow;
+
+		bool burst_end;
+		int32_t burst_samps;
+		uint32_t burst_head;
+
+	} ;
+
+	struct SoapyHackRFStream
+	{
+		RXStream * rxStream;
+		TXStream * txStream;
+		int32_t  direction;
+	};
+
+
+	RXStream * _rx_stream;
+	TXStream * _tx_stream;
 
 	bool _auto_bandwidth;
 
-	bool _bias;
-
 	hackrf_device * _dev;
 
-	double _frequency;
+	hackrf_device_list_t * _list;
 
-	uint32_t _rx_vga_gain;
+	uint64_t _current_frequency;
 
-	uint32_t _rx_lna_gain;
+	double _current_samplerate;
 
-	uint32_t _tx_vga_gain;
+	uint32_t _current_bandwidth;
 
-	double _samplerate;
-
-	uint32_t _bandwidth;
-
-	uint8_t _amp;
+	uint8_t _current_amp;
 
 	int32_t _id;
+	std::mutex	_activate_mutex;
+	std::mutex	_buf_mutex;
+	std::condition_variable _buf_cond;
 
 	transceiver_mode_t _current_mode;
 
