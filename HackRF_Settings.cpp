@@ -61,7 +61,6 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	_tx_stream->buf_count=0;
 	_tx_stream->buf_tail=0;
 	_tx_stream->buf_head=0;
-	_tx_stream->burst_head=0;
 	_tx_stream->burst_samps=0;
 	_tx_stream->burst_end=false;
 

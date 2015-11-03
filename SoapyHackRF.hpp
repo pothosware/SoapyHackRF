@@ -336,8 +336,6 @@ private:
 
 		bool burst_end;
 		int32_t burst_samps;
-		uint32_t burst_head;
-
 	} ;
 
 	struct SoapyHackRFStream

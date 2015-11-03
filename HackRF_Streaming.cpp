@@ -40,9 +40,7 @@ int _hackrf_tx_callback( hackrf_transfer *transfer )
 
 int SoapyHackRF::hackrf_rx_callback( int8_t *buffer, int32_t length )
 {
-
 	std::unique_lock<std::mutex> lock(_buf_mutex);
-
 	_rx_stream->buf_tail = (_rx_stream->buf_head + _rx_stream->buf_count) % _rx_stream->buf_num;
 	memcpy(_rx_stream->buf[_rx_stream->buf_tail], buffer, length );
 
@@ -67,14 +65,20 @@ int SoapyHackRF::hackrf_tx_callback( int8_t *buffer, int32_t length  )
 		memset( buffer, 0, length );
 		_tx_stream->underflow=true;
 	}else {
+		memcpy( buffer, _tx_stream->buf[_tx_stream->buf_tail], length );
+		_tx_stream->buf_tail = (_tx_stream->buf_tail + 1) % _tx_stream->buf_num;
+
+		_tx_stream->buf_count--;
+
 		if(_tx_stream->burst_end)
 		{
-			memcpy(buffer,_tx_stream->buf[_tx_stream->burst_head],length);
-		}else {
-			memcpy( buffer, _tx_stream->buf[_tx_stream->buf_tail], length );
-			_tx_stream->buf_tail = (_tx_stream->buf_tail + 1) % _tx_stream->buf_num;
+			_tx_stream->burst_samps -= (length/BYTES_PER_SAMPLE);
+			if(_tx_stream->burst_samps < 0 ) {
+				_tx_stream->burst_end = false;
+				_tx_stream->burst_samps = 0;
+				return -1;
+			}
 		}
-		_tx_stream->buf_count--;
 	}
 	_buf_cond.notify_one();
 
@@ -274,10 +278,17 @@ int SoapyHackRF::activateStream(
 
 		std::lock_guard<std::mutex> lock(_activate_mutex);
 
+
 		if(_current_mode==TRANSCEIVER_MODE_RX)
 			return 0;
 
 		if(_current_mode==TRANSCEIVER_MODE_TX){
+
+			if(_tx_stream->burst_end){
+
+				while(hackrf_is_streaming(_dev)==HACKRF_TRUE);
+
+			}
 
 			hackrf_stop_tx(_dev);
 		}
@@ -326,13 +337,12 @@ int SoapyHackRF::activateStream(
 
 		std::lock_guard<std::mutex> lock(_activate_mutex);
 
-
 		if((flags & SOAPY_SDR_END_BURST)!=0 and numElems!=0) {
-			_tx_stream->burst_end = true;
-			_tx_stream->burst_samps = numElems;
-
 			if(_current_mode==TRANSCEIVER_MODE_RX){
-				_tx_stream->burst_end=true;
+				_tx_stream->buf_head=0;
+				_tx_stream->buf_tail=0;
+				_tx_stream->burst_end = true;
+				_tx_stream->burst_samps = numElems;
 			}
 		}
 
@@ -601,20 +611,13 @@ int SoapyHackRF::writeStream(
 	if (ret<0)return ret;
 
 	_tx_stream->remainderHandle=handle;
-
-	if((flags & SOAPY_SDR_END_BURST)!=0 ) {
-		_tx_stream->burst_end = true;
-		_tx_stream->remainderSamps=returnedElems;
-	}else{
-		_tx_stream->remainderSamps=ret;
-	}
+	_tx_stream->remainderSamps=ret;
 
 	const size_t n =std::min((returnedElems-samp_avail),_tx_stream->remainderSamps);
 
 	writebuf(buffs[0],_tx_stream->remainderBuff,n,_tx_stream->format,samp_avail);
 	_tx_stream->remainderSamps -=n;
 	_tx_stream->remainderOffset +=n;
-
 
 	if(_tx_stream->remainderSamps==0){
 		this->releaseWriteBuffer(stream,_tx_stream->remainderHandle,_tx_stream->remainderOffset,flags,timeNs);
@@ -640,7 +643,6 @@ int SoapyHackRF::readStreamStatus(
 
 		return SOAPY_SDR_NOT_SUPPORTED;
 	}
-
 
 	//calculate when the loop should exit
 	const auto timeout = std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(std::chrono::microseconds(timeoutUs));
@@ -677,20 +679,11 @@ int SoapyHackRF::acquireReadBuffer(
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
 
 	if(data->direction!=SOAPY_SDR_RX){
-
 		return SOAPY_SDR_NOT_SUPPORTED;
 	}
 
-	if(_tx_stream->burst_end){
-		handle=_rx_stream->buf_head;
-		memset(_rx_stream->buf[_rx_stream->buf_head],0,this->getStreamMTU(stream));
-		_rx_stream->buf_head = (_rx_stream->buf_head + 1) % _rx_stream->buf_num;
-		this->getDirectAccessBufferAddrs(stream,handle,(void **)buffs);
-
-		return this->getStreamMTU(stream);;
-	}
-
 	if ( _current_mode!=TRANSCEIVER_MODE_RX ) {
+
 		int ret=this->activateStream(stream);
 		if(ret<0) return ret;
 	}
@@ -763,6 +756,12 @@ int SoapyHackRF::acquireWriteBuffer(
 
 	this->getDirectAccessBufferAddrs(stream,handle,buffs);
 
+	if(_tx_stream->burst_end){
+		if((_tx_stream->burst_samps - int32_t(this->getStreamMTU(stream))) < 0){
+			memset(buffs[0],0,this->getStreamMTU(stream));
+			return _tx_stream->burst_samps;
+		}
+	}
 	return this->getStreamMTU(stream);
 
 }
@@ -777,19 +776,6 @@ void SoapyHackRF::releaseWriteBuffer(
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
 
 	std::unique_lock <std::mutex> lock( _buf_mutex );
-
-	if((flags & SOAPY_SDR_END_BURST)!=0 ) {
-		_tx_stream->burst_end = true;
-	}
-
-	if(_tx_stream->burst_end) {
-		_tx_stream->burst_head=handle;
-		_tx_stream->burst_samps-=numElems;
-		if (_tx_stream->burst_samps<0) {
-			_tx_stream->burst_end = false;
-		}
-
-	}
 
 	_tx_stream->buf_count++;
 }
