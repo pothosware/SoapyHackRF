@@ -1,5 +1,8 @@
 soapyhackrf (0.2.0) unstable; urgency=low
 
+  * Implemented Tx/Rx automatic stream switching
+  * Implemented automatic gain distribution algorithm
+  * Implemented the direct buffer access API
   * Implemented getStreamFormats() for SoapySDR v0.4
   * Implemented getNativeStreamFormat() for SoapySDR v0.4
   * Implemented getStreamArgsInfo() for SoapySDR v0.4
