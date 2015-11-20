@@ -1,5 +1,9 @@
 # Soapy SDR module for Hack RF
 
+##Build Status
+
+- Travis: [![Travis Build Status](https://travis-ci.org/pothosware/SoapyHackRF.svg?branch=master)](https://travis-ci.org/pothosware/SoapyHackRF)
+
 ##Dependencies
 
 * SoapySDR - https://github.com/pothosware/SoapySDR/wiki
