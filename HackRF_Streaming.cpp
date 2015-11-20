@@ -286,8 +286,8 @@ int SoapyHackRF::activateStream(
 
 			if(_tx_stream->burst_end){
 
-				while(hackrf_is_streaming(_dev)==HACKRF_TRUE);
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				while(hackrf_is_streaming(_dev)==HACKRF_TRUE)
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			}
 
 			hackrf_stop_tx(_dev);
