@@ -1,3 +1,9 @@
+soapyhackrf (0.2.1) unstable; urgency=low
+
+  * Fixed debian control file Maintainer/Uploaders
+
+ -- Josh Blum <josh@pothosware.com>  Mon, 04 Jan 2016 16:46:55 -0800
+
 soapyhackrf (0.2.0) unstable; urgency=low
 
   * Implemented Tx/Rx automatic stream switching
