@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2015
+ * Copyright (c) 2015-2016
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -294,6 +294,13 @@ int SoapyHackRF::activateStream(
 		}
 
 		SoapySDR_logf(SOAPY_SDR_DEBUG, "Start RX");
+
+		//reset buffer tracking before streaming
+		{
+			_rx_stream->buf_count = 0;
+			_rx_stream->buf_head = 0;
+			_rx_stream->buf_tail = 0;
+		}
 
 		int ret = hackrf_start_rx(_dev, _hackrf_rx_callback, (void *) this);
 		if (ret != HACKRF_SUCCESS) {
