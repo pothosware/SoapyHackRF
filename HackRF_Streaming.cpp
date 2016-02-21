@@ -691,6 +691,15 @@ int SoapyHackRF::acquireReadBuffer(
 
 	if ( _current_mode!=TRANSCEIVER_MODE_RX ) {
 
+		//wait for tx to be consumed before switching
+		const auto exitTime = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(timeoutUs);
+		while (true)
+		{
+			std::unique_lock <std::mutex> lock( _buf_mutex );
+			if (_tx_stream->buf_count == 0) break;
+			if (std::chrono::high_resolution_clock::now() > exitTime) return SOAPY_SDR_TIMEOUT;
+		}
+
 		int ret=this->activateStream(stream);
 		if(ret<0) return ret;
 	}
