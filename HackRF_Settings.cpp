@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2015
+ * Copyright (c) 2015-2016
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -24,6 +24,13 @@
 
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
+	std::string argsStr;
+	for (const auto &pair : args)
+	{
+		if (not argsStr.empty()) argsStr += ", ";
+		argsStr += pair.first + "=" + pair.second;
+	}
+	SoapySDR_logf( SOAPY_SDR_INFO, "Opening HackRF device instance {%s}...", argsStr.c_str());
 
 	_rx_stream=new RXStream();
 
