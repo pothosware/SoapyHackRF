@@ -1,10 +1,10 @@
-soapyhackrf (0.2.0.1) unstable; urgency=low
+soapyhackrf (0.2.1) unstable; urgency=low
 
   * Fixed debian control file Maintainer/Uploaders
   * Reset buffer counters before activating RX stream
   * Rx stream switching waits for tx to be consumed
 
- -- Josh Blum <josh@pothosware.com>  Mon, 04 Jan 2016 16:46:55 -0800
+ -- Josh Blum <josh@pothosware.com>  Mon, 29 Feb 2016 13:19:38 -0800
 
 soapyhackrf (0.2.0) unstable; urgency=low
 
