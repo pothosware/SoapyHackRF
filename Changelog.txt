@@ -1,0 +1,28 @@
+Release 0.2.2 (pending)
+==========================
+
+- Update debian files for SoapySDR module ABI format
+
+Release 0.2.1 (2016-02-29)
+==========================
+
+- Fixed debian control file Maintainer/Uploaders
+- Reset buffer counters before activating RX stream
+- Rx stream switching waits for tx to be consumed
+
+Release 0.2.0 (2015-11-20)
+==========================
+
+- Implemented Tx/Rx automatic stream switching
+- Implemented automatic gain distribution algorithm
+- Implemented the direct buffer access API
+- Implemented getStreamFormats() for SoapySDR v0.4
+- Implemented getNativeStreamFormat() for SoapySDR v0.4
+- Implemented getStreamArgsInfo() for SoapySDR v0.4
+- Created settings API calls for Bias TX control
+- Moved buffers device arg into stream args
+
+Release 0.1.0 (2015-10-10)
+==========================
+
+- First release of SoapyHackRF support module
