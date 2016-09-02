@@ -8,17 +8,23 @@ Build-Depends:
     cmake,
     libhackrf-dev,
     libsoapysdr-dev
-Standards-Version: 3.9.5
+Standards-Version: 3.9.8
 Homepage: https://github.com/pothosware/SoapyHackRF/wiki
 Vcs-Git: https://github.com/pothosware/SoapyHackRF.git
 Vcs-Browser: https://github.com/pothosware/SoapyHackRF
 
-Package: soapysdr-hackrf
-Section: libs
+Package: soapysdr0.5-2-module-hackrf
 Architecture: any
-Conflicts: soapyosmo-hackrf
-Replaces: soapyosmo-hackrf
-Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Soapy HackRF - HackRF device support for Soapy SDR.
  A Soapy module that supports HackRF devices within the Soapy API.
+
+Package: soapysdr-module-hackrf
+Architecture: all
+Depends: soapysdr0.5-2-module-hackrf, ${misc:Depends}
+Description: Soapy HackRF - HackRF device support for Soapy SDR.
+ A Soapy module that supports HackRF devices within the Soapy API.
+ .
+ This is an empty dependency package that pulls in the HackRF module
+ for the default version of libsoapysdr.
