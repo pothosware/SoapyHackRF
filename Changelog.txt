@@ -1,6 +1,7 @@
 Release 0.2.2 (pending)
 ==========================
 
+- New transceiver_mode_t enum for HackRF API changes
 - Clarified copyright statements in source files
 - Update debian files for SoapySDR module ABI format
 

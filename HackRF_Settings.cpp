@@ -71,7 +71,7 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	_tx_stream->burst_samps=0;
 	_tx_stream->burst_end=false;
 
-	_current_mode=TRANSCEIVER_MODE_OFF;
+	_current_mode=HACKRF_TRANSCEIVER_MODE_OFF;
 
 	_auto_bandwidth=true;
 

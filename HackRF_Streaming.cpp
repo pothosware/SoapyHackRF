@@ -279,10 +279,10 @@ int SoapyHackRF::activateStream(
 		std::lock_guard<std::mutex> lock(_activate_mutex);
 
 
-		if(_current_mode==TRANSCEIVER_MODE_RX)
+		if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX)
 			return 0;
 
-		if(_current_mode==TRANSCEIVER_MODE_TX){
+		if(_current_mode==HACKRF_TRANSCEIVER_MODE_TX){
 
 			if(_tx_stream->burst_end){
 
@@ -336,7 +336,7 @@ int SoapyHackRF::activateStream(
 			return SOAPY_SDR_STREAM_ERROR;
 
 		}
-			_current_mode = TRANSCEIVER_MODE_RX;
+			_current_mode = HACKRF_TRANSCEIVER_MODE_RX;
 
 	}
 
@@ -345,7 +345,7 @@ int SoapyHackRF::activateStream(
 		std::lock_guard<std::mutex> lock(_activate_mutex);
 
 		if((flags & SOAPY_SDR_END_BURST)!=0 and numElems!=0) {
-			if(_current_mode==TRANSCEIVER_MODE_RX){
+			if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX){
 				_tx_stream->buf_head=0;
 				_tx_stream->buf_tail=0;
 				_tx_stream->burst_end = true;
@@ -353,10 +353,10 @@ int SoapyHackRF::activateStream(
 			}
 		}
 
-		if(_current_mode==TRANSCEIVER_MODE_TX)
+		if(_current_mode==HACKRF_TRANSCEIVER_MODE_TX)
 			return 0;
 
-		if(_current_mode==TRANSCEIVER_MODE_RX){
+		if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX){
 
 			hackrf_stop_rx(_dev);
 		}
@@ -399,7 +399,7 @@ int SoapyHackRF::activateStream(
 			SoapySDR_logf(SOAPY_SDR_ERROR,"Activate TX Stream Failed.");
 			return SOAPY_SDR_STREAM_ERROR;
 		}
-			_current_mode = TRANSCEIVER_MODE_TX;
+			_current_mode = HACKRF_TRANSCEIVER_MODE_TX;
 
 	}
 
@@ -418,13 +418,13 @@ int SoapyHackRF::deactivateStream(
 
 		std::lock_guard<std::mutex> lock(_activate_mutex);
 
-		if(_current_mode==TRANSCEIVER_MODE_RX) {
+		if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX) {
 
 			int ret = hackrf_stop_rx(_dev);
 			if (ret != HACKRF_SUCCESS) {
 				SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_stop_rx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
 			}
-			_current_mode = TRANSCEIVER_MODE_OFF;
+			_current_mode = HACKRF_TRANSCEIVER_MODE_OFF;
 		}
 	}
 
@@ -432,12 +432,12 @@ int SoapyHackRF::deactivateStream(
 
 		std::lock_guard<std::mutex> lock(_activate_mutex);
 
-		if(_current_mode==TRANSCEIVER_MODE_TX) {
+		if(_current_mode==HACKRF_TRANSCEIVER_MODE_TX) {
 			int ret = hackrf_stop_tx(_dev);
 			if (ret != HACKRF_SUCCESS) {
 				SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_stop_tx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
 			}
-			_current_mode = TRANSCEIVER_MODE_OFF;
+			_current_mode = HACKRF_TRANSCEIVER_MODE_OFF;
 		}
 
 	}
@@ -689,7 +689,7 @@ int SoapyHackRF::acquireReadBuffer(
 		return SOAPY_SDR_NOT_SUPPORTED;
 	}
 
-	if ( _current_mode!=TRANSCEIVER_MODE_RX ) {
+	if ( _current_mode!=HACKRF_TRANSCEIVER_MODE_RX ) {
 
 		//wait for tx to be consumed before switching
 		const auto exitTime = std::chrono::high_resolution_clock::now() + std::chrono::microseconds(timeoutUs);
@@ -754,7 +754,7 @@ int SoapyHackRF::acquireWriteBuffer(
 		return SOAPY_SDR_NOT_SUPPORTED;
 	}
 
-	if(_current_mode!=TRANSCEIVER_MODE_TX) {
+	if(_current_mode!=HACKRF_TRANSCEIVER_MODE_TX) {
 		int ret=this->activateStream(stream);
 		if(ret<0) return ret;
 	}

@@ -42,6 +42,12 @@ enum HackRF_Format {
 	HACKRF_FORMAT_FLOAT64 =3,
 };
 
+typedef enum {
+	HACKRF_TRANSCEIVER_MODE_OFF = 0,
+	HACKRF_TRANSCEIVER_MODE_RX = 1,
+	HACKRF_TRANSCEIVER_MODE_TX = 2,
+} HackRF_transceiver_mode_t;
+
 
 /*!
  * The session object manages hackrf_init/exit
@@ -368,7 +374,7 @@ private:
 	std::mutex	_buf_mutex;
 	std::condition_variable _buf_cond;
 
-	transceiver_mode_t _current_mode;
+	HackRF_transceiver_mode_t _current_mode;
 
 	SoapyHackRFSession _sess;
 };
