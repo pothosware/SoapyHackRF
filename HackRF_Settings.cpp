@@ -357,7 +357,7 @@ bool SoapyHackRF::getGainMode( const int direction, const size_t channel ) const
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const double value )
 {
-	int32_t ret, gain;
+	int32_t ret(0), gain(0);
 	gain = value;
 
 	if ( direction == SOAPY_SDR_RX )
@@ -558,7 +558,7 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 	if ( name != "RF" )
 		throw std::runtime_error( "getFrequency(" + name + ") unknown name" );
 
-	double freq;
+	double freq(0.0);
 
 	if(direction==SOAPY_SDR_RX){
 
@@ -645,7 +645,7 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 
 double SoapyHackRF::getSampleRate( const int direction, const size_t channel ) const
 {
-	double samp;
+	double samp(0.0);
 	if(direction==SOAPY_SDR_RX){
 
 		samp= _rx_stream->samplerate;
@@ -705,7 +705,7 @@ void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const
 
 double SoapyHackRF::getBandwidth( const int direction, const size_t channel ) const
 {
-	double bw;
+	double bw(0.0);
 	if(direction==SOAPY_SDR_RX){
 
 		bw = _rx_stream->bandwidth;

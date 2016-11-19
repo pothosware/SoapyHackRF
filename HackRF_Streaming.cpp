@@ -248,14 +248,14 @@ void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 {
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
 
-	delete data;;
+	delete data;
 }
 
 
 size_t SoapyHackRF::getStreamMTU( SoapySDR::Stream *stream ) const
 {
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
-	size_t mtu;
+	size_t mtu(0);
 	if(data->direction==SOAPY_SDR_RX){
 		mtu =_rx_stream->buf_len/BYTES_PER_SAMPLE;
 
@@ -802,7 +802,7 @@ size_t SoapyHackRF::getNumDirectAccessBuffers(
 {
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
 
-	size_t buffers;
+	size_t buffers(0);
 	if(data->direction==SOAPY_SDR_RX){
 		buffers =_rx_stream->buf_num;
 
