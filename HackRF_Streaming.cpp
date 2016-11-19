@@ -21,6 +21,7 @@
 
 #include "SoapyHackRF.hpp"
 #include <SoapySDR/Logger.hpp>
+#include <SoapySDR/Formats.hpp>
 #include <chrono>
 #include <thread>
 #include <algorithm> //min
@@ -89,10 +90,10 @@ std::vector<std::string> SoapyHackRF::getStreamFormats(const int direction, cons
 {
 	std::vector<std::string> formats;
 
-	formats.push_back("CS8");
-	formats.push_back("CS16");
-	formats.push_back("CF32");
-	formats.push_back("CF64");
+	formats.push_back(SOAPY_SDR_CS8);
+	formats.push_back(SOAPY_SDR_CS16);
+	formats.push_back(SOAPY_SDR_CF32);
+	formats.push_back(SOAPY_SDR_CF64);
 
 	return formats;
 }
@@ -100,7 +101,7 @@ std::vector<std::string> SoapyHackRF::getStreamFormats(const int direction, cons
 std::string SoapyHackRF::getNativeStreamFormat(const int direction, const size_t channel, double &fullScale) const
 {
 	fullScale = 128;
-	return "CS8";
+	return SOAPY_SDR_CS8;
 }
 
 SoapySDR::ArgInfoList SoapyHackRF::getStreamArgsInfo(const int direction, const size_t channel) const
@@ -134,19 +135,19 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 	if(direction==SOAPY_SDR_RX){
 
-		if ( format == "CS8" )
+		if ( format == SOAPY_SDR_CS8 )
 		{
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CS8." );
 			_rx_stream->format = HACKRF_FORMAT_INT8;
-		}else if ( format == "CS16" )
+		}else if ( format == SOAPY_SDR_CS16 )
 		{
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CS16." );
 			_rx_stream->format = HACKRF_FORMAT_INT16;
-		}else if ( format == "CF32" )
+		}else if ( format == SOAPY_SDR_CF32 )
 		{
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CF32." );
 			_rx_stream->format= HACKRF_FORMAT_FLOAT32;
-		}else if(format=="CF64"){
+		}else if(format==SOAPY_SDR_CF64){
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CF64." );
 			_rx_stream->format= HACKRF_FORMAT_FLOAT64;
 		}else throw std::runtime_error( "setupStream invalid format " + format );
@@ -183,19 +184,19 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 	if(direction==SOAPY_SDR_TX){
 
-		if ( format == "CS8" )
+		if ( format == SOAPY_SDR_CS8 )
 		{
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CS8." );
 			_tx_stream->format = HACKRF_FORMAT_INT8;
-		}else if ( format == "CS16" )
+		}else if ( format == SOAPY_SDR_CS16 )
 		{
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CS16." );
 			_tx_stream->format = HACKRF_FORMAT_INT16;
-		}else if ( format == "CF32" )
+		}else if ( format == SOAPY_SDR_CF32 )
 		{
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CF32." );
 			_tx_stream->format= HACKRF_FORMAT_FLOAT32;
-		}else if(format=="CF64"){
+		}else if(format==SOAPY_SDR_CF64){
 			SoapySDR_log( SOAPY_SDR_DEBUG, "Using format CF64." );
 			_tx_stream->format= HACKRF_FORMAT_FLOAT64;
 		}else throw std::runtime_error( "setupStream invalid format " + format );
