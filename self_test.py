@@ -52,7 +52,7 @@ if __name__ == "__main__":
     rxStream = hackrf.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32, [0])
     txStream = hackrf.setupStream(SOAPY_SDR_TX, SOAPY_SDR_CF32, [0])
 
-    hackrf.activateStream(txStream)
+    hackrf.activateStream(rxStream)
     hackrf.activateStream(txStream)
 
     numSampsTotal = 10000
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         assert(sr.ret > 0)
         numSampsTotal -= sr.ret
 
-    hackrf.deactivateStream(txStream)
+    hackrf.deactivateStream(rxStream)
     hackrf.deactivateStream(txStream)
 
     hackrf.closeStream(rxStream)
