@@ -73,6 +73,13 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 						read_partid_serialno.serial_no[3]);
 				options["serial"] = serial_str;
 
+				//generate a displayable label string with trimmed serial
+				size_t ofs = 0;
+				while (ofs < sizeof(serial_str) and serial_str[ofs] == '0') ofs++;
+				char label_str[100];
+				sprintf(label_str, "%s #%d %s", options["device"].c_str(), i, serial_str+ofs);
+				options["label"] = label_str;
+
 				//filter based on serial and idx
 				const bool serialMatch = args.count("serial") == 0 or args.at("serial") == options["serial"];
 				const bool idxMatch = args.count("hackrf") == 0 or std::stoi(args.at("hackrf")) == i;

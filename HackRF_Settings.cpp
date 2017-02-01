@@ -25,13 +25,8 @@
 
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
-	std::string argsStr;
-	for (const auto &pair : args)
-	{
-		if (not argsStr.empty()) argsStr += ", ";
-		argsStr += pair.first + "=" + pair.second;
-	}
-	SoapySDR_logf( SOAPY_SDR_INFO, "Opening HackRF device instance {%s}...", argsStr.c_str());
+	if (args.count("label") != 0)
+		SoapySDR_logf( SOAPY_SDR_INFO, "Opening %s...", args.at("label").c_str());
 
 	_rx_stream=new RXStream();
 
