@@ -1,6 +1,7 @@
-Release 0.2.3 (pending)
+Release 0.2.3 (2017-01-27)
 ==========================
 
+- Support filtering specific devices by serial number
 - Switch to format constants in streaming implementation
 
 Release 0.2.2 (2016-10-19)

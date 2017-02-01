@@ -2,6 +2,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Wei Jiang
+ * Copyright (c) 2015-2017 Josh Blum
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -72,7 +73,13 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 						read_partid_serialno.serial_no[3]);
 				options["serial"] = serial_str;
 
-				results.push_back(options);
+				//filter based on serial and idx
+				const bool serialMatch = args.count("serial") == 0 or args.at("serial") == options["serial"];
+				const bool idxMatch = args.count("hackrf") == 0 or std::stoi(args.at("hackrf")) == i;
+				if (serialMatch and idxMatch)
+				{
+					results.push_back(options);
+				}
 
 				hackrf_close(device);
 			}

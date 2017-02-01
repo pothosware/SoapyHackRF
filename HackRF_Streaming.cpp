@@ -2,6 +2,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015-2016 Wei Jiang
+ * Copyright (c) 2015-2017 Josh Blum
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -313,12 +314,7 @@ int SoapyHackRF::activateStream(
 		if (ret==HACKRF_ERROR_STREAMING_EXIT_CALLED){
 
 			hackrf_close(_dev);
-
-			if (_id<0){
-				hackrf_open(&_dev);
-			}else {
-				hackrf_device_list_open(_list,_id,&_dev);
-			}
+			hackrf_open_by_serial(_serial.c_str(), &_dev);
 			_current_frequency=_rx_stream->frequecy;
 			hackrf_set_freq(_dev,_current_frequency);
 			_current_samplerate=_rx_stream->samplerate;
@@ -376,12 +372,7 @@ int SoapyHackRF::activateStream(
 
 
 			hackrf_close(_dev);
-
-			if (_id<0){
-				hackrf_open(&_dev);
-			}else {
-				hackrf_device_list_open(_list,_id,&_dev);
-			}
+			hackrf_open_by_serial(_serial.c_str(), &_dev);
 			_current_frequency=_tx_stream->frequecy;
 			hackrf_set_freq(_dev,_current_frequency);
 			_current_samplerate=_tx_stream->samplerate;

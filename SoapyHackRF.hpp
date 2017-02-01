@@ -1,7 +1,8 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2015
+ * Copyright (c) 2015 Wei Jiang
+ * Copyright (c) 2015-2017 Josh Blum
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -358,8 +359,7 @@ private:
 	bool _auto_bandwidth;
 
 	hackrf_device * _dev;
-
-	hackrf_device_list_t * _list;
+	std::string _serial;
 
 	uint64_t _current_frequency;
 
@@ -369,7 +369,6 @@ private:
 
 	uint8_t _current_amp;
 
-	int32_t _id;
 	std::mutex	_activate_mutex;
 	std::mutex	_buf_mutex;
 	std::condition_variable _buf_cond;

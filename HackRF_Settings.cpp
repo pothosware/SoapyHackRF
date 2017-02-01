@@ -2,6 +2,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015-2016 Wei Jiang
+ * Copyright (c) 2015-2017 Josh Blum
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -77,7 +78,9 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	_dev		= nullptr;
 
-	_list= nullptr;
+	if (args.count("serial") == 0)
+		throw std::runtime_error("no hackrf device matches");
+	_serial = args.at("serial");
 
 	_current_amp = 0;
 
@@ -87,38 +90,12 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	_current_bandwidth=0;
 
-	_id = -1;
-
-
-	_list= hackrf_device_list();
-
-	if ( args.count( "hackrf" ) != 0 )
+	int ret = hackrf_open_by_serial(_serial.c_str(), &_dev);
+	if ( ret != HACKRF_SUCCESS )
 	{
-		_id = std::stoi( args.at( "hackrf" ) );
-
-		if ( _id < 0 && _id > _list->devicecount )
-		{
-			throw std::runtime_error( "hackrf out of range [0 .. " + std::to_string( _list->devicecount ) + "]." );
-		}
-		int ret = hackrf_device_list_open(_list, _id, &_dev );
-		if ( ret != HACKRF_SUCCESS )
-		{
-			hackrf_device_list_free(_list);
-			SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device by Index:%d", _id );
-			throw std::runtime_error("hackrf open failed");
-		}
-	} else if ( _id == -1 )
-	{
-		int ret = hackrf_open( &_dev );
-		if ( ret != HACKRF_SUCCESS )
-		{
-			SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device" );
-			throw std::runtime_error("hackrf open failed");
-		}
+		SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device" );
+		throw std::runtime_error("hackrf open failed");
 	}
-
-
-
 }
 
 
@@ -126,7 +103,6 @@ SoapyHackRF::~SoapyHackRF( void )
 {
 	if ( _dev )
 	{
-		hackrf_device_list_free(_list);
 		hackrf_close( _dev );
 	}
 
