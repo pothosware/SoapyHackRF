@@ -369,7 +369,11 @@ private:
 
 	uint8_t _current_amp;
 
-	std::mutex	_activate_mutex;
+	/// Mutex protecting all use of the hackrf device _dev and other instance variables.
+	/// Most of the hackrf API is thread-safe because it only calls libusb, however
+	/// the activateStream() method in this library can close and re-open the device,
+	/// so all use of _dev must be protected
+	mutable std::mutex	_device_mutex;
 	std::mutex	_buf_mutex;
 	std::condition_variable _buf_cond;
 

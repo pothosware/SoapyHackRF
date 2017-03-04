@@ -158,6 +158,7 @@ std::string SoapyHackRF::getDriverKey( void ) const
 
 std::string SoapyHackRF::getHardwareKey( void ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	uint8_t board_id=BOARD_ID_INVALID;
 
 	hackrf_board_id_read(_dev,&board_id);
@@ -168,6 +169,7 @@ std::string SoapyHackRF::getHardwareKey( void ) const
 
 SoapySDR::Kwargs SoapyHackRF::getHardwareInfo( void ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	SoapySDR::Kwargs info;
 
 	char version_str[100];
@@ -238,6 +240,7 @@ SoapySDR::ArgInfoList SoapyHackRF::getSettingInfo(void) const
 void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 {
 	if(key=="bias_tx"){
+		std::lock_guard<std::mutex> lock(_device_mutex);
 		_tx_stream->bias=(value=="true") ? true : false;
 		int ret=hackrf_set_antenna_enable(_dev,_tx_stream->bias);
 		if(ret!=HACKRF_SUCCESS){
@@ -328,6 +331,7 @@ bool SoapyHackRF::getGainMode( const int direction, const size_t channel ) const
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const double value )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	int32_t ret(0), gain(0);
 	gain = value;
 
@@ -390,6 +394,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const std::string &name, const double value )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	if ( name == "AMP" )
 	{
 		_current_amp = value;
@@ -451,6 +456,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 
 double SoapyHackRF::getGain( const int direction, const size_t channel, const std::string &name ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double gain = 0.0;
 	if ( direction == SOAPY_SDR_RX and name == "AMP" )
 	{
@@ -498,6 +504,7 @@ void SoapyHackRF::setFrequency( const int direction, const size_t channel, const
 	if ( name != "RF" )
 		throw std::runtime_error( "setFrequency(" + name + ") unknown name" );
 
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	_current_frequency = frequency;
 
 
@@ -529,6 +536,7 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 	if ( name != "RF" )
 		throw std::runtime_error( "getFrequency(" + name + ") unknown name" );
 
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double freq(0.0);
 
 	if(direction==SOAPY_SDR_RX){
@@ -573,6 +581,7 @@ SoapySDR::RangeList SoapyHackRF::getFrequencyRange( const int direction, const s
 
 void SoapyHackRF::setSampleRate( const int direction, const size_t channel, const double rate )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	_current_samplerate = rate;
 
 	if(direction==SOAPY_SDR_RX){
@@ -616,6 +625,7 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 
 double SoapyHackRF::getSampleRate( const int direction, const size_t channel ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double samp(0.0);
 	if(direction==SOAPY_SDR_RX){
 
@@ -643,6 +653,7 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	_current_bandwidth = hackrf_compute_baseband_filter_bw(bw);
 
 	if(direction==SOAPY_SDR_RX){
@@ -676,6 +687,7 @@ void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const
 
 double SoapyHackRF::getBandwidth( const int direction, const size_t channel ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double bw(0.0);
 	if(direction==SOAPY_SDR_RX){
 

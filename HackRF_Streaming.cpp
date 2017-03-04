@@ -278,7 +278,7 @@ int SoapyHackRF::activateStream(
 
 	if(data->direction==SOAPY_SDR_RX){
 
-		std::lock_guard<std::mutex> lock(_activate_mutex);
+		std::lock_guard<std::mutex> lock(_device_mutex);
 
 
 		if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX)
@@ -339,7 +339,7 @@ int SoapyHackRF::activateStream(
 
 	if(data->direction==SOAPY_SDR_TX ){
 
-		std::lock_guard<std::mutex> lock(_activate_mutex);
+		std::lock_guard<std::mutex> lock(_device_mutex);
 
 		if((flags & SOAPY_SDR_END_BURST)!=0 and numElems!=0) {
 			if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX){
@@ -408,7 +408,7 @@ int SoapyHackRF::deactivateStream(
 
 	if(data->direction==SOAPY_SDR_RX){
 
-		std::lock_guard<std::mutex> lock(_activate_mutex);
+		std::lock_guard<std::mutex> lock(_device_mutex);
 
 		if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX) {
 
@@ -422,7 +422,7 @@ int SoapyHackRF::deactivateStream(
 
 	if(data->direction==SOAPY_SDR_TX){
 
-		std::lock_guard<std::mutex> lock(_activate_mutex);
+		std::lock_guard<std::mutex> lock(_device_mutex);
 
 		if(_current_mode==HACKRF_TRANSCEIVER_MODE_TX) {
 			int ret = hackrf_stop_tx(_dev);
