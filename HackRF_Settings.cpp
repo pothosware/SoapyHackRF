@@ -37,7 +37,7 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	_rx_stream->vga_gain=16;
 	_rx_stream->lna_gain=16;
 	_rx_stream->amp_gain=0;
-	_rx_stream->frequecy=0;
+	_rx_stream->frequency=0;
 	_rx_stream->samplerate=0;
 	_rx_stream->bandwidth=0;
 	_rx_stream->format=HACKRF_FORMAT_INT8;
@@ -55,7 +55,7 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	_tx_stream->remainderHandle=-1;
 	_tx_stream->vga_gain=0;
 	_tx_stream->amp_gain=0;
-	_tx_stream->frequecy=0;
+	_tx_stream->frequency=0;
 	_tx_stream->samplerate=0;
 	_tx_stream->bandwidth=0;
 	_tx_stream->format=HACKRF_FORMAT_INT8;
@@ -503,11 +503,11 @@ void SoapyHackRF::setFrequency( const int direction, const size_t channel, const
 
 	if(direction==SOAPY_SDR_RX){
 
-		_rx_stream->frequecy=_current_frequency;
+		_rx_stream->frequency=_current_frequency;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		_tx_stream->frequecy=_current_frequency;
+		_tx_stream->frequency=_current_frequency;
 	}
 
 	if ( _dev != NULL )
@@ -533,11 +533,11 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 
 	if(direction==SOAPY_SDR_RX){
 
-		freq = _rx_stream->frequecy;
+		freq = _rx_stream->frequency;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		freq = _tx_stream->frequecy;
+		freq = _tx_stream->frequency;
 	}
 	return(freq);
 }

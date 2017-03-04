@@ -300,7 +300,7 @@ private:
 		uint8_t amp_gain;
 		double samplerate;
 		uint32_t bandwidth;
-		uint64_t frequecy;
+		uint64_t frequency;
 
 		int32_t remainderHandle;
 		size_t remainderSamps;
@@ -324,7 +324,7 @@ private:
 		uint8_t amp_gain;
 		double samplerate;
 		uint32_t bandwidth;
-		uint64_t frequecy;
+		uint64_t frequency;
 		bool bias;
 
 		int32_t remainderHandle;

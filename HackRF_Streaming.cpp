@@ -315,7 +315,7 @@ int SoapyHackRF::activateStream(
 
 			hackrf_close(_dev);
 			hackrf_open_by_serial(_serial.c_str(), &_dev);
-			_current_frequency=_rx_stream->frequecy;
+			_current_frequency=_rx_stream->frequency;
 			hackrf_set_freq(_dev,_current_frequency);
 			_current_samplerate=_rx_stream->samplerate;
 			hackrf_set_sample_rate(_dev,_current_samplerate);
@@ -373,7 +373,7 @@ int SoapyHackRF::activateStream(
 
 			hackrf_close(_dev);
 			hackrf_open_by_serial(_serial.c_str(), &_dev);
-			_current_frequency=_tx_stream->frequecy;
+			_current_frequency=_tx_stream->frequency;
 			hackrf_set_freq(_dev,_current_frequency);
 			_current_samplerate=_tx_stream->samplerate;
 			hackrf_set_sample_rate(_dev,_current_samplerate);
