@@ -353,8 +353,8 @@ private:
 	};
 
 
-	RXStream * _rx_stream;
-	TXStream * _tx_stream;
+	RXStream _rx_stream;
+	TXStream _tx_stream;
 
 	bool _auto_bandwidth;
 
