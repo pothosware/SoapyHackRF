@@ -298,11 +298,12 @@ private:
 	SoapySDR::Stream* const RX_STREAM = (SoapySDR::Stream*) 0x2;
 
 	struct Stream {
-		Stream(): buf_num(BUF_NUM), buf_len(BUF_LEN), buf(nullptr),
+		Stream(): opened(false), buf_num(BUF_NUM), buf_len(BUF_LEN), buf(nullptr),
 				  buf_head(0), buf_tail(0), buf_count(0),
 				  remainderHandle(-1), remainderSamps(0), remainderOffset(0), remainderBuff(nullptr),
 				  format(HACKRF_FORMAT_INT8) {}
 
+		bool opened;
 		uint32_t	buf_num;
 		uint32_t	buf_len;
 		int8_t		**buf;

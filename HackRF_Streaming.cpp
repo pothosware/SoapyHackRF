@@ -156,12 +156,17 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 	const std::vector<size_t> &channels,
 	const SoapySDR::Kwargs &args )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
+
 	if ( channels.size() > 1 or( channels.size() > 0 and channels.at( 0 ) != 0 ) )
 	{
 		throw std::runtime_error( "setupStream invalid channel selection" );
 	}
 
 	if(direction==SOAPY_SDR_RX){
+		if (_rx_stream.opened) {
+			throw std::runtime_error("RX stream already opened");
+		}
 
 		if ( format == SOAPY_SDR_CS8 )
 		{
@@ -196,8 +201,13 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 		}
 		_rx_stream.allocate_buffers();
 
+		_rx_stream.opened = true;
+
 		return RX_STREAM;
 	} else if(direction==SOAPY_SDR_TX){
+		if (_tx_stream.opened) {
+			throw std::runtime_error("TX stream already opened");
+		}
 
 		if ( format == SOAPY_SDR_CS8 )
 		{
@@ -233,6 +243,7 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 		}
 
 		_tx_stream.allocate_buffers();
+		_tx_stream.opened = true;
 
 		return TX_STREAM;
 	} else {
@@ -242,10 +253,13 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	if (stream == RX_STREAM) {
 		_rx_stream.clear_buffers();
+		_rx_stream.opened = false;
 	} else if (stream == TX_STREAM) {
 		_tx_stream.clear_buffers();
+		_tx_stream.opened = false;
 	}
 }
 
