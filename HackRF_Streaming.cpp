@@ -513,8 +513,10 @@ int SoapyHackRF::readStream(
 	long long &timeNs,
 	const long timeoutUs )
 {
+	if(stream != RX_STREAM){
+		return SOAPY_SDR_NOT_SUPPORTED;
+	}
 	/* this is the user's buffer for channel 0 */
-
 	size_t returnedElems = std::min(numElems,this->getStreamMTU(stream));
 
 	size_t samp_avail=0;
@@ -577,6 +579,9 @@ int SoapyHackRF::writeStream(
 		const long long timeNs,
 		const long timeoutUs )
 {
+	if(stream != TX_STREAM){
+		return SOAPY_SDR_NOT_SUPPORTED;
+	}
 
 	size_t returnedElems = std::min(numElems,this->getStreamMTU(stream));
 
@@ -720,6 +725,9 @@ void SoapyHackRF::releaseReadBuffer(
 		SoapySDR::Stream *stream,
 		const size_t handle)
 {
+	if(stream != RX_STREAM){
+		throw std::runtime_error("Invalid stream");
+	}
 
 	if(!_tx_stream.burst_end){
 
