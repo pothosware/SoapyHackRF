@@ -294,6 +294,9 @@ public:
 
 private:
 
+	SoapySDR::Stream* const TX_STREAM = (SoapySDR::Stream*) 0x1;
+	SoapySDR::Stream* const RX_STREAM = (SoapySDR::Stream*) 0x2;
+
 	struct Stream {
 		Stream(): buf_num(BUF_NUM), buf_len(BUF_LEN), buf(nullptr),
 				  buf_head(0), buf_tail(0), buf_count(0),
@@ -342,14 +345,6 @@ private:
 		bool burst_end;
 		int32_t burst_samps;
 	} ;
-
-	struct SoapyHackRFStream
-	{
-		RXStream * rxStream;
-		TXStream * txStream;
-		int32_t  direction;
-	};
-
 
 	RXStream _rx_stream;
 	TXStream _tx_stream;
