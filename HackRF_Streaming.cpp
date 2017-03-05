@@ -121,6 +121,35 @@ SoapySDR::ArgInfoList SoapyHackRF::getStreamArgsInfo(const int direction, const 
 	return streamArgs;
 }
 
+void SoapyHackRF::Stream::allocate_buffers() {
+	buf = (int8_t * *) malloc( buf_num * sizeof(int8_t *) );
+	if ( buf ) {
+		for ( unsigned int i = 0; i < buf_num; ++i ) {
+			buf[i] = (int8_t *) malloc( buf_len );
+		}
+	}
+}
+
+void SoapyHackRF::Stream::clear_buffers() {
+	if ( buf ) {
+		for ( unsigned int i = 0; i < buf_num; ++i ) {
+			if ( buf[i] ) {
+				free( buf[i] );
+			}
+		}
+		free( buf );
+		buf = NULL;
+	}
+
+	buf_count = 0;
+	buf_tail = 0;
+	buf_head = 0;
+	remainderSamps = 0;
+	remainderOffset = 0;
+	remainderBuff = nullptr;
+	remainderHandle = -1;
+}
+
 SoapySDR::Stream *SoapyHackRF::setupStream(
 	const int direction,
 	const std::string &format,
@@ -153,34 +182,21 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 			_rx_stream.format= HACKRF_FORMAT_FLOAT64;
 		}else throw std::runtime_error( "setupStream invalid format " + format );
 
+		_rx_stream.buf_num = BUF_NUM;
+
 		if ( args.count( "buffers" ) != 0 )
 		{
 			try
 			{
 				int numBuffers_in = std::stoi(args.at("buffers"));
 				if (numBuffers_in > 0) {
-					if ( _rx_stream.buf ) {
-						for ( unsigned int i = 0; i < _rx_stream.buf_num; ++i ) {
-							if ( _rx_stream.buf[i] ) {
-								free( _rx_stream.buf[i] );
-							}
-						}
-						free( _rx_stream.buf );
-						_rx_stream.buf = NULL;
-					}
-
 					_rx_stream.buf_num = numBuffers_in;
 				}
 			}
 			catch (const std::invalid_argument &){}
 
 		}
-		_rx_stream.buf = (int8_t * *) malloc( _rx_stream.buf_num * sizeof(int8_t *) );
-		if ( _rx_stream.buf )
-		{
-			for ( unsigned int i = 0; i < _rx_stream.buf_num; ++i )
-				_rx_stream.buf[i] = (int8_t *) malloc( _rx_stream.buf_len );
-		}
+		_rx_stream.allocate_buffers();
 	}
 
 	if(direction==SOAPY_SDR_TX){
@@ -202,6 +218,8 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 			_tx_stream.format= HACKRF_FORMAT_FLOAT64;
 		}else throw std::runtime_error( "setupStream invalid format " + format );
 
+		_tx_stream.buf_num = BUF_NUM;
+
 		if ( args.count( "buffers" ) != 0 )
 		{
 			try
@@ -209,19 +227,6 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 				int numBuffers_in = std::stoi(args.at("buffers"));
 				if (numBuffers_in > 0)
 				{
-					if ( _tx_stream.buf )
-					{
-						for ( unsigned int i = 0; i < _tx_stream.buf_num; ++i )
-						{
-							if ( _tx_stream.buf[i] )
-							{
-								free( _tx_stream.buf[i] );
-							}
-						}
-						free( _tx_stream.buf );
-						_tx_stream.buf = NULL;
-					}
-
 					_tx_stream.buf_num = numBuffers_in;
 				}
 			}
@@ -229,12 +234,7 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 		}
 
-		_tx_stream.buf = (int8_t * *) malloc( _tx_stream.buf_num * sizeof(int8_t *) );
-		if ( _tx_stream.buf )
-		{
-			for ( unsigned int i = 0; i < _tx_stream.buf_num; ++i )
-				_tx_stream.buf[i] = (int8_t *) malloc( _tx_stream.buf_len );
-		}
+		_tx_stream.allocate_buffers();
 
 	}
 
@@ -244,10 +244,15 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 	return ((SoapySDR::Stream *) data );
 }
 
-
 void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 {
 	SoapyHackRFStream * data = (SoapyHackRFStream*)stream;
+
+	if (data->direction == SOAPY_SDR_RX) {
+		_rx_stream.clear_buffers();
+	} else if (data->direction == SOAPY_SDR_TX) {
+		_tx_stream.clear_buffers();
+	}
 
 	delete data;
 }

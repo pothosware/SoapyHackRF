@@ -294,7 +294,31 @@ public:
 
 private:
 
-	struct RXStream{
+	struct Stream {
+		Stream(): buf_num(BUF_NUM), buf_len(BUF_LEN), buf(nullptr),
+				  buf_head(0), buf_tail(0), buf_count(0),
+				  remainderHandle(-1), remainderSamps(0), remainderOffset(0), remainderBuff(nullptr),
+				  format(HACKRF_FORMAT_INT8) {}
+
+		uint32_t	buf_num;
+		uint32_t	buf_len;
+		int8_t		**buf;
+		uint32_t	buf_head;
+		uint32_t	buf_tail;
+		uint32_t	buf_count;
+
+		int32_t remainderHandle;
+		size_t remainderSamps;
+		size_t remainderOffset;
+		int8_t* remainderBuff;
+		uint32_t format;
+
+		~Stream() { clear_buffers(); }
+		void clear_buffers();
+		void allocate_buffers();
+	};
+
+	struct RXStream: Stream {
 		uint32_t vga_gain;
 		uint32_t lna_gain;
 		uint8_t amp_gain;
@@ -302,24 +326,10 @@ private:
 		uint32_t bandwidth;
 		uint64_t frequency;
 
-		int32_t remainderHandle;
-		size_t remainderSamps;
-		size_t remainderOffset;
-		int8_t* remainderBuff;
-		uint32_t format;
-
-		uint32_t	buf_num;
-		uint32_t	buf_len;
-		int8_t		**buf;
-		uint32_t	buf_head;
-		uint32_t	buf_tail;
-		uint32_t	buf_count;
-
 		bool overflow;
-	} ;
+	};
 
-
-	struct TXStream{
+	struct TXStream: Stream {
 		uint32_t vga_gain;
 		uint8_t amp_gain;
 		double samplerate;
@@ -327,18 +337,6 @@ private:
 		uint64_t frequency;
 		bool bias;
 
-		int32_t remainderHandle;
-		size_t remainderSamps;
-		size_t remainderOffset;
-		int8_t* remainderBuff;
-		uint32_t format;
-
-		uint32_t	buf_num;
-		uint32_t	buf_len;
-		int8_t		**buf;
-		uint32_t	buf_head;
-		uint32_t	buf_tail;
-		uint32_t	buf_count;
 		bool underflow;
 
 		bool burst_end;

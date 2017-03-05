@@ -28,40 +28,22 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	if (args.count("label") != 0)
 		SoapySDR_logf( SOAPY_SDR_INFO, "Opening %s...", args.at("label").c_str());
 
-	_rx_stream.remainderSamps=0;
-	_rx_stream.remainderOffset=0;
-	_rx_stream.remainderBuff= nullptr;
-	_rx_stream.remainderHandle=-1;
 	_rx_stream.vga_gain=16;
 	_rx_stream.lna_gain=16;
 	_rx_stream.amp_gain=0;
 	_rx_stream.frequency=0;
 	_rx_stream.samplerate=0;
 	_rx_stream.bandwidth=0;
-	_rx_stream.format=HACKRF_FORMAT_INT8;
-	_rx_stream.buf_len=BUF_LEN;
-	_rx_stream.buf_num=BUF_NUM;
-	_rx_stream.buf_count=0;
-	_rx_stream.buf_tail=0;
-	_rx_stream.buf_head=0;
+	_rx_stream.overflow = false;
 
-	_tx_stream.remainderSamps=0;
-	_tx_stream.remainderOffset=0;
-	_tx_stream.remainderBuff= nullptr;
-	_tx_stream.remainderHandle=-1;
 	_tx_stream.vga_gain=0;
 	_tx_stream.amp_gain=0;
 	_tx_stream.frequency=0;
 	_tx_stream.samplerate=0;
 	_tx_stream.bandwidth=0;
-	_tx_stream.format=HACKRF_FORMAT_INT8;
-	_tx_stream.buf_len=BUF_LEN;
-	_tx_stream.buf_num=BUF_NUM;
-	_tx_stream.buf_count=0;
-	_tx_stream.buf_tail=0;
-	_tx_stream.buf_head=0;
 	_tx_stream.burst_samps=0;
 	_tx_stream.burst_end=false;
+	_tx_stream.underflow = false;
 
 	_current_mode=HACKRF_TRANSCEIVER_MODE_OFF;
 
@@ -95,33 +77,6 @@ SoapyHackRF::~SoapyHackRF( void )
 	if ( _dev )
 	{
 		hackrf_close( _dev );
-	}
-
-	if ( _rx_stream.buf )
-	{
-		for ( unsigned int i = 0; i < _rx_stream.buf_num; ++i )
-		{
-			if ( _rx_stream.buf[i] )
-			{
-				free( _rx_stream.buf[i] );
-			}
-		}
-		free( _rx_stream.buf );
-		_rx_stream.buf = NULL;
-	}
-
-
-	if ( _tx_stream.buf )
-	{
-		for ( unsigned int i = 0; i < _tx_stream.buf_num; ++i )
-		{
-			if ( _tx_stream.buf[i] )
-			{
-				free( _tx_stream.buf[i] );
-			}
-		}
-		free( _tx_stream.buf );
-		_tx_stream.buf = NULL;
 	}
 
 	/* cleanup device handles */
