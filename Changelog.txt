@@ -1,6 +1,7 @@
-Release 0.2.3 (2017-01-27)
+Release 0.3.0 (pending)
 ==========================
 
+- Major cleanup for thread safety and buffer management
 - Added label convention to hackrf discovery routine
 - Support filtering specific devices by serial number
 - Switch to format constants in streaming implementation
