@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2015-2016 Wei Jiang
  * Copyright (c) 2015-2017 Josh Blum
+ * Copyright (c) 2017 Kevin Mehall
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -28,44 +29,22 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	if (args.count("label") != 0)
 		SoapySDR_logf( SOAPY_SDR_INFO, "Opening %s...", args.at("label").c_str());
 
-	_rx_stream=new RXStream();
+	_rx_stream.vga_gain=16;
+	_rx_stream.lna_gain=16;
+	_rx_stream.amp_gain=0;
+	_rx_stream.frequency=0;
+	_rx_stream.samplerate=0;
+	_rx_stream.bandwidth=0;
+	_rx_stream.overflow = false;
 
-	_rx_stream->remainderSamps=0;
-	_rx_stream->remainderOffset=0;
-	_rx_stream->remainderBuff= nullptr;
-	_rx_stream->remainderHandle=-1;
-	_rx_stream->vga_gain=16;
-	_rx_stream->lna_gain=16;
-	_rx_stream->amp_gain=0;
-	_rx_stream->frequecy=0;
-	_rx_stream->samplerate=0;
-	_rx_stream->bandwidth=0;
-	_rx_stream->format=HACKRF_FORMAT_INT8;
-	_rx_stream->buf_len=BUF_LEN;
-	_rx_stream->buf_num=BUF_NUM;
-	_rx_stream->buf_count=0;
-	_rx_stream->buf_tail=0;
-	_rx_stream->buf_head=0;
-
-	_tx_stream=new TXStream();
-
-	_tx_stream->remainderSamps=0;
-	_tx_stream->remainderOffset=0;
-	_tx_stream->remainderBuff= nullptr;
-	_tx_stream->remainderHandle=-1;
-	_tx_stream->vga_gain=0;
-	_tx_stream->amp_gain=0;
-	_tx_stream->frequecy=0;
-	_tx_stream->samplerate=0;
-	_tx_stream->bandwidth=0;
-	_tx_stream->format=HACKRF_FORMAT_INT8;
-	_tx_stream->buf_len=BUF_LEN;
-	_tx_stream->buf_num=BUF_NUM;
-	_tx_stream->buf_count=0;
-	_tx_stream->buf_tail=0;
-	_tx_stream->buf_head=0;
-	_tx_stream->burst_samps=0;
-	_tx_stream->burst_end=false;
+	_tx_stream.vga_gain=0;
+	_tx_stream.amp_gain=0;
+	_tx_stream.frequency=0;
+	_tx_stream.samplerate=0;
+	_tx_stream.bandwidth=0;
+	_tx_stream.burst_samps=0;
+	_tx_stream.burst_end=false;
+	_tx_stream.underflow = false;
 
 	_current_mode=HACKRF_TRANSCEIVER_MODE_OFF;
 
@@ -101,46 +80,6 @@ SoapyHackRF::~SoapyHackRF( void )
 		hackrf_close( _dev );
 	}
 
-
-	if (_rx_stream){
-
-
-		if ( _rx_stream->buf )
-		{
-			for ( unsigned int i = 0; i < _rx_stream->buf_num; ++i )
-			{
-				if ( _rx_stream->buf[i] )
-				{
-					free( _rx_stream->buf[i] );
-				}
-			}
-			free( _rx_stream->buf );
-			_rx_stream->buf = NULL;
-		}
-
-		delete _rx_stream;
-	}
-
-
-	if (_tx_stream){
-
-
-		if ( _tx_stream->buf )
-		{
-			for ( unsigned int i = 0; i < _tx_stream->buf_num; ++i )
-			{
-				if ( _tx_stream->buf[i] )
-				{
-					free( _tx_stream->buf[i] );
-				}
-			}
-			free( _tx_stream->buf );
-			_tx_stream->buf = NULL;
-		}
-
-		delete _tx_stream;
-	}
-
 	/* cleanup device handles */
 }
 
@@ -158,6 +97,7 @@ std::string SoapyHackRF::getDriverKey( void ) const
 
 std::string SoapyHackRF::getHardwareKey( void ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	uint8_t board_id=BOARD_ID_INVALID;
 
 	hackrf_board_id_read(_dev,&board_id);
@@ -168,6 +108,7 @@ std::string SoapyHackRF::getHardwareKey( void ) const
 
 SoapySDR::Kwargs SoapyHackRF::getHardwareInfo( void ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	SoapySDR::Kwargs info;
 
 	char version_str[100];
@@ -238,8 +179,9 @@ SoapySDR::ArgInfoList SoapyHackRF::getSettingInfo(void) const
 void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 {
 	if(key=="bias_tx"){
-		_tx_stream->bias=(value=="true") ? true : false;
-		int ret=hackrf_set_antenna_enable(_dev,_tx_stream->bias);
+		std::lock_guard<std::mutex> lock(_device_mutex);
+		_tx_stream.bias=(value=="true") ? true : false;
+		int ret=hackrf_set_antenna_enable(_dev,_tx_stream.bias);
 		if(ret!=HACKRF_SUCCESS){
 
 			SoapySDR_logf(SOAPY_SDR_INFO,"Failed to apply antenna bias voltage");
@@ -252,7 +194,7 @@ void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 std::string SoapyHackRF::readSetting(const std::string &key) const
 {
 	if (key == "bias_tx") {
-		return _tx_stream->bias?"true":"false";
+		return _tx_stream.bias?"true":"false";
 	}
 	return "";
 }
@@ -328,6 +270,7 @@ bool SoapyHackRF::getGainMode( const int direction, const size_t channel ) const
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const double value )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	int32_t ret(0), gain(0);
 	gain = value;
 
@@ -335,50 +278,50 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 	{
 		if ( gain <= 0 )
 		{
-			_rx_stream->lna_gain	= 0;
-			_rx_stream->vga_gain	= 0;
+			_rx_stream.lna_gain	= 0;
+			_rx_stream.vga_gain	= 0;
 			_current_amp		= 0;
 		}else if ( gain <= (HACKRF_RX_LNA_MAX_DB / 2) + (HACKRF_RX_VGA_MAX_DB / 2) )
 		{
-			_rx_stream->vga_gain	= (gain / 3) & ~0x1;
-			_rx_stream->lna_gain	= gain - _rx_stream->vga_gain;
+			_rx_stream.vga_gain	= (gain / 3) & ~0x1;
+			_rx_stream.lna_gain	= gain - _rx_stream.vga_gain;
 			_current_amp		= 0;
 		}else if ( gain <= ( (HACKRF_RX_LNA_MAX_DB / 2) + (HACKRF_RX_VGA_MAX_DB / 2) + HACKRF_AMP_MAX_DB) )
 		{
 			_current_amp		= HACKRF_AMP_MAX_DB;
-			_rx_stream->vga_gain	= ( (gain - _current_amp) / 3) & ~0x1;
-			_rx_stream->lna_gain	= gain -_current_amp - _rx_stream->vga_gain;
+			_rx_stream.vga_gain	= ( (gain - _current_amp) / 3) & ~0x1;
+			_rx_stream.lna_gain	= gain -_current_amp - _rx_stream.vga_gain;
 		}else if ( gain <= HACKRF_RX_LNA_MAX_DB + HACKRF_RX_VGA_MAX_DB + HACKRF_AMP_MAX_DB )
 		{
 			_current_amp		= HACKRF_AMP_MAX_DB;
-			_rx_stream->vga_gain	= (gain - _current_amp) * double(HACKRF_RX_LNA_MAX_DB) / double(HACKRF_RX_VGA_MAX_DB);
-			_rx_stream->lna_gain	= gain - _current_amp - _rx_stream->vga_gain;
+			_rx_stream.vga_gain	= (gain - _current_amp) * double(HACKRF_RX_LNA_MAX_DB) / double(HACKRF_RX_VGA_MAX_DB);
+			_rx_stream.lna_gain	= gain - _current_amp - _rx_stream.vga_gain;
 		}
 
-		_rx_stream->amp_gain=_current_amp;
+		_rx_stream.amp_gain=_current_amp;
 
-		ret	= hackrf_set_lna_gain( _dev, _rx_stream->lna_gain );
-		ret	|= hackrf_set_vga_gain( _dev, _rx_stream->vga_gain );
+		ret	= hackrf_set_lna_gain( _dev, _rx_stream.lna_gain );
+		ret	|= hackrf_set_vga_gain( _dev, _rx_stream.vga_gain );
 		ret	|= hackrf_set_amp_enable( _dev, (_current_amp > 0) ? 1 : 0 );
 	}else if ( direction == SOAPY_SDR_TX )
 	{
 		if ( gain <= 0 )
 		{
 			_current_amp		= 0;
-			_tx_stream->vga_gain	= 0;
+			_tx_stream.vga_gain	= 0;
 		}else if ( gain <= (HACKRF_TX_VGA_MAX_DB / 2) )
 		{
 			_current_amp		= 0;
-			_tx_stream->vga_gain	= gain;
+			_tx_stream.vga_gain	= gain;
 		}else if ( gain <= HACKRF_TX_VGA_MAX_DB + HACKRF_AMP_MAX_DB )
 		{
 			_current_amp		= HACKRF_AMP_MAX_DB;
-			_tx_stream->vga_gain	= gain - HACKRF_AMP_MAX_DB;
+			_tx_stream.vga_gain	= gain - HACKRF_AMP_MAX_DB;
 		}
 
-		_tx_stream->amp_gain=_current_amp;
+		_tx_stream.amp_gain=_current_amp;
 
-		ret	= hackrf_set_txvga_gain( _dev, _tx_stream->vga_gain );
+		ret	= hackrf_set_txvga_gain( _dev, _tx_stream.vga_gain );
 		ret	|= hackrf_set_amp_enable( _dev, (_current_amp > 0) ? 1 : 0 );
 	}
 	if ( ret != HACKRF_SUCCESS )
@@ -390,15 +333,16 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 
 void SoapyHackRF::setGain( const int direction, const size_t channel, const std::string &name, const double value )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	if ( name == "AMP" )
 	{
 		_current_amp = value;
 		_current_amp = (_current_amp > 0)?HACKRF_AMP_MAX_DB : 0; //clip to possible values
 
 		if(direction == SOAPY_SDR_RX){
-			_rx_stream->amp_gain=_current_amp;
+			_rx_stream.amp_gain=_current_amp;
 		}else if (direction ==SOAPY_SDR_TX){
-			_tx_stream->amp_gain=_current_amp;
+			_tx_stream.amp_gain=_current_amp;
 		}
 
 		if ( _dev != NULL )
@@ -411,35 +355,35 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 		}
 	}else if ( direction == SOAPY_SDR_RX and name == "LNA" )
 	{
-		_rx_stream->lna_gain = value;
+		_rx_stream.lna_gain = value;
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_lna_gain( _dev, _rx_stream->lna_gain );
+			int ret = hackrf_set_lna_gain( _dev, _rx_stream.lna_gain );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_lna_gain(%f) returned %s", _rx_stream->lna_gain, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_lna_gain(%f) returned %s", _rx_stream.lna_gain, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}else if ( direction == SOAPY_SDR_RX and name == "VGA" )
 	{
-		_rx_stream->vga_gain = value;
+		_rx_stream.vga_gain = value;
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_vga_gain( _dev, _rx_stream->vga_gain );
+			int ret = hackrf_set_vga_gain( _dev, _rx_stream.vga_gain );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_vga_gain(%f) returned %s", _rx_stream->vga_gain, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_vga_gain(%f) returned %s", _rx_stream.vga_gain, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}else if ( direction == SOAPY_SDR_TX and name == "VGA" )
 	{
-		_tx_stream->vga_gain = value;
+		_tx_stream.vga_gain = value;
 		if ( _dev != NULL )
 		{
-			int ret = hackrf_set_txvga_gain( _dev, _tx_stream->vga_gain );
+			int ret = hackrf_set_txvga_gain( _dev, _tx_stream.vga_gain );
 			if ( ret != HACKRF_SUCCESS )
 			{
-				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_txvga_gain(%f) returned %s", _tx_stream->vga_gain, hackrf_error_name( (hackrf_error) ret ) );
+				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_txvga_gain(%f) returned %s", _tx_stream.vga_gain, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
 	}
@@ -451,22 +395,23 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 
 double SoapyHackRF::getGain( const int direction, const size_t channel, const std::string &name ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double gain = 0.0;
 	if ( direction == SOAPY_SDR_RX and name == "AMP" )
 	{
-		gain = -_rx_stream->amp_gain;
+		gain = -_rx_stream.amp_gain;
 	}else if ( direction == SOAPY_SDR_TX and name == "AMP" )
 	{
-		gain = _tx_stream->amp_gain;
+		gain = _tx_stream.amp_gain;
 	}else if ( direction == SOAPY_SDR_RX and name == "LNA" )
 	{
-		gain = _rx_stream->lna_gain;
+		gain = _rx_stream.lna_gain;
 	}else if ( direction == SOAPY_SDR_RX and name == "VGA" )
 	{
-		gain = _rx_stream->vga_gain;
+		gain = _rx_stream.vga_gain;
 	}else if ( direction == SOAPY_SDR_TX and name == "VGA" )
 	{
-		gain = _tx_stream->vga_gain;
+		gain = _tx_stream.vga_gain;
 	}
 
 	return(gain);
@@ -498,16 +443,17 @@ void SoapyHackRF::setFrequency( const int direction, const size_t channel, const
 	if ( name != "RF" )
 		throw std::runtime_error( "setFrequency(" + name + ") unknown name" );
 
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	_current_frequency = frequency;
 
 
 	if(direction==SOAPY_SDR_RX){
 
-		_rx_stream->frequecy=_current_frequency;
+		_rx_stream.frequency=_current_frequency;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		_tx_stream->frequecy=_current_frequency;
+		_tx_stream.frequency=_current_frequency;
 	}
 
 	if ( _dev != NULL )
@@ -529,15 +475,16 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 	if ( name != "RF" )
 		throw std::runtime_error( "getFrequency(" + name + ") unknown name" );
 
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double freq(0.0);
 
 	if(direction==SOAPY_SDR_RX){
 
-		freq = _rx_stream->frequecy;
+		freq = _rx_stream.frequency;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		freq = _tx_stream->frequecy;
+		freq = _tx_stream.frequency;
 	}
 	return(freq);
 }
@@ -573,15 +520,16 @@ SoapySDR::RangeList SoapyHackRF::getFrequencyRange( const int direction, const s
 
 void SoapyHackRF::setSampleRate( const int direction, const size_t channel, const double rate )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	_current_samplerate = rate;
 
 	if(direction==SOAPY_SDR_RX){
 
-		_rx_stream->samplerate=_current_samplerate;
+		_rx_stream.samplerate=_current_samplerate;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		_tx_stream->samplerate=_current_samplerate;
+		_tx_stream.samplerate=_current_samplerate;
 	}
 
 	if ( _dev != NULL )
@@ -595,11 +543,11 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 
 			if(direction==SOAPY_SDR_RX){
 
-				_rx_stream->bandwidth=_current_bandwidth;
+				_rx_stream.bandwidth=_current_bandwidth;
 			}
 			if(direction==SOAPY_SDR_TX){
 
-				_tx_stream->bandwidth=_current_bandwidth;
+				_tx_stream.bandwidth=_current_bandwidth;
 			}
 
 			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
@@ -616,14 +564,15 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 
 double SoapyHackRF::getSampleRate( const int direction, const size_t channel ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double samp(0.0);
 	if(direction==SOAPY_SDR_RX){
 
-		samp= _rx_stream->samplerate;
+		samp= _rx_stream.samplerate;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		samp= _tx_stream->samplerate;
+		samp= _tx_stream.samplerate;
 	}
 
 	return(samp);
@@ -643,15 +592,16 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	_current_bandwidth = hackrf_compute_baseband_filter_bw(bw);
 
 	if(direction==SOAPY_SDR_RX){
 
-		_rx_stream->bandwidth=_current_bandwidth;
+		_rx_stream.bandwidth=_current_bandwidth;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		_tx_stream->bandwidth=_current_bandwidth;
+		_tx_stream.bandwidth=_current_bandwidth;
 	}
 
 	if(_current_bandwidth > 0){
@@ -676,14 +626,15 @@ void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const
 
 double SoapyHackRF::getBandwidth( const int direction, const size_t channel ) const
 {
+	std::lock_guard<std::mutex> lock(_device_mutex);
 	double bw(0.0);
 	if(direction==SOAPY_SDR_RX){
 
-		bw = _rx_stream->bandwidth;
+		bw = _rx_stream.bandwidth;
 	}
 	if(direction==SOAPY_SDR_TX){
 
-		bw = _tx_stream->bandwidth;
+		bw = _tx_stream.bandwidth;
 	}
 
 	return (bw);
@@ -711,5 +662,3 @@ std::vector<double> SoapyHackRF::listBandwidths( const int direction, const size
 	options.push_back( 28000000 );
 	return(options);
 }
-
-

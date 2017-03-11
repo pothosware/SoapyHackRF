@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2015 Wei Jiang
  * Copyright (c) 2015-2017 Josh Blum
+ * Copyright (c) 2017 Kevin Mehall
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -294,67 +295,61 @@ public:
 
 private:
 
-	struct RXStream{
+	SoapySDR::Stream* const TX_STREAM = (SoapySDR::Stream*) 0x1;
+	SoapySDR::Stream* const RX_STREAM = (SoapySDR::Stream*) 0x2;
+
+	struct Stream {
+		Stream(): opened(false), buf_num(BUF_NUM), buf_len(BUF_LEN), buf(nullptr),
+				  buf_head(0), buf_tail(0), buf_count(0),
+				  remainderHandle(-1), remainderSamps(0), remainderOffset(0), remainderBuff(nullptr),
+				  format(HACKRF_FORMAT_INT8) {}
+
+		bool opened;
+		uint32_t	buf_num;
+		uint32_t	buf_len;
+		int8_t		**buf;
+		uint32_t	buf_head;
+		uint32_t	buf_tail;
+		uint32_t	buf_count;
+
+		int32_t remainderHandle;
+		size_t remainderSamps;
+		size_t remainderOffset;
+		int8_t* remainderBuff;
+		uint32_t format;
+
+		~Stream() { clear_buffers(); }
+		void clear_buffers();
+		void allocate_buffers();
+	};
+
+	struct RXStream: Stream {
 		uint32_t vga_gain;
 		uint32_t lna_gain;
 		uint8_t amp_gain;
 		double samplerate;
 		uint32_t bandwidth;
-		uint64_t frequecy;
-
-		int32_t remainderHandle;
-		size_t remainderSamps;
-		size_t remainderOffset;
-		int8_t* remainderBuff;
-		uint32_t format;
-
-		uint32_t	buf_num;
-		uint32_t	buf_len;
-		int8_t		**buf;
-		uint32_t	buf_head;
-		uint32_t	buf_tail;
-		uint32_t	buf_count;
+		uint64_t frequency;
 
 		bool overflow;
-	} ;
+	};
 
-
-	struct TXStream{
+	struct TXStream: Stream {
 		uint32_t vga_gain;
 		uint8_t amp_gain;
 		double samplerate;
 		uint32_t bandwidth;
-		uint64_t frequecy;
+		uint64_t frequency;
 		bool bias;
 
-		int32_t remainderHandle;
-		size_t remainderSamps;
-		size_t remainderOffset;
-		int8_t* remainderBuff;
-		uint32_t format;
-
-		uint32_t	buf_num;
-		uint32_t	buf_len;
-		int8_t		**buf;
-		uint32_t	buf_head;
-		uint32_t	buf_tail;
-		uint32_t	buf_count;
 		bool underflow;
 
 		bool burst_end;
 		int32_t burst_samps;
 	} ;
 
-	struct SoapyHackRFStream
-	{
-		RXStream * rxStream;
-		TXStream * txStream;
-		int32_t  direction;
-	};
-
-
-	RXStream * _rx_stream;
-	TXStream * _tx_stream;
+	RXStream _rx_stream;
+	TXStream _tx_stream;
 
 	bool _auto_bandwidth;
 
@@ -369,7 +364,11 @@ private:
 
 	uint8_t _current_amp;
 
-	std::mutex	_activate_mutex;
+	/// Mutex protecting all use of the hackrf device _dev and other instance variables.
+	/// Most of the hackrf API is thread-safe because it only calls libusb, however
+	/// the activateStream() method in this library can close and re-open the device,
+	/// so all use of _dev must be protected
+	mutable std::mutex	_device_mutex;
 	std::mutex	_buf_mutex;
 	std::condition_variable _buf_cond;
 
