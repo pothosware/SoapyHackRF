@@ -1,4 +1,4 @@
-Release 0.3.0 (pending)
+Release 0.3.0 (2017-04-29)
 ==========================
 
 - Major cleanup for thread safety and buffer management
