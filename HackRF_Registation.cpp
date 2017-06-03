@@ -23,7 +23,7 @@
 #include "SoapyHackRF.hpp"
 #include <SoapySDR/Registry.hpp>
 
-
+static std::map<std::string, SoapySDR::Kwargs> _cachedResults;
 
 static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 {
@@ -86,6 +86,7 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 				if (serialMatch and idxMatch)
 				{
 					results.push_back(options);
+					_cachedResults[serial_str] = options;
 				}
 
 				hackrf_close(device);
@@ -96,6 +97,14 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 	}
 
 	hackrf_device_list_free(list);
+
+	//fill in the cached results for claimed handles
+	for (const auto &serial : HackRF_getClaimedSerials())
+	{
+		if (_cachedResults.count(serial) == 0) continue;
+		if (args.count("serial") != 0 and args.at("serial") != serial) continue;
+		results.push_back(_cachedResults.at(serial));
+	}
 
 	return results;
 }

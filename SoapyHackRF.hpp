@@ -28,6 +28,7 @@
 #include <condition_variable>
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Logger.hpp>
+#include <set>
 
 #define BUF_LEN			262144
 #define BUF_NUM			15
@@ -50,6 +51,7 @@ typedef enum {
 	HACKRF_TRANSCEIVER_MODE_TX = 2,
 } HackRF_transceiver_mode_t;
 
+std::set<std::string> &HackRF_getClaimedSerials(void);
 
 /*!
  * The session object manages hackrf_init/exit

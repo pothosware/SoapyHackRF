@@ -23,6 +23,11 @@
 
 #include "SoapyHackRF.hpp"
 
+std::set<std::string> &HackRF_getClaimedSerials(void)
+{
+	static std::set<std::string> serials;
+	return serials;
+}
 
 SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 {
@@ -70,11 +75,15 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 		SoapySDR_logf( SOAPY_SDR_INFO, "Could not Open HackRF Device" );
 		throw std::runtime_error("hackrf open failed");
 	}
+
+	HackRF_getClaimedSerials().insert(_serial);
 }
 
 
 SoapyHackRF::~SoapyHackRF( void )
 {
+	HackRF_getClaimedSerials().erase(_serial);
+
 	if ( _dev )
 	{
 		hackrf_close( _dev );

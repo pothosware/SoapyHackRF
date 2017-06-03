@@ -1,3 +1,8 @@
+Release 0.3.1 (pending)
+==========================
+
+- Cache discovered HackRF results for claimed devices
+
 Release 0.3.0 (2017-04-29)
 ==========================
 
