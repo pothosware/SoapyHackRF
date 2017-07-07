@@ -16,12 +16,12 @@ find_package(LIBHACKRF)
 if (NOT LIBHACKRF_FOUND) 
      message(FATAL_ERROR "HackRF development files not found...") 
 endif () 
-message(STATUS "LIBHACKRF_INCLUDE_DIR - ${LIBHACKRF_INCLUDE_DIR}")
+message(STATUS "LIBHACKRF_INCLUDE_DIRS - ${LIBHACKRF_INCLUDE_DIRS}")
 message(STATUS "LIBHACKRF_LIBRARIES - ${LIBHACKRF_LIBRARIES}")
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${LIBHACKRF_INCLUDE_DIR})
+include_directories(${LIBHACKRF_INCLUDE_DIRS})
 
 #enable c++11 features
 if(CMAKE_COMPILER_IS_GNUCXX)
