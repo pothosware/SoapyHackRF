@@ -730,13 +730,8 @@ void SoapyHackRF::releaseReadBuffer(
 		throw std::runtime_error("Invalid stream");
 	}
 
-	if(!_tx_stream.burst_end){
-
-		std::unique_lock <std::mutex> lock( _buf_mutex );
-
-		_rx_stream.buf_count--;
-	}
-
+	std::unique_lock <std::mutex> lock( _buf_mutex );
+	_rx_stream.buf_count--;
 }
 
 int SoapyHackRF::acquireWriteBuffer(

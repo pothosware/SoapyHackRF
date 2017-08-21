@@ -1,6 +1,7 @@
 Release 0.3.2 (pending)
 ==========================
 
+- Fix edge case in SoapyHackRF::releaseReadBuffer()
 - Standard style find script for FindLIBHACKRF.cmake
 
 Release 0.3.1 (2017-06-19)
