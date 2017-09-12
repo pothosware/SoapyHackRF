@@ -300,6 +300,42 @@ int SoapyHackRF::activateStream(
 			}
 
 			hackrf_stop_tx(_dev);
+			
+			// determine what (if any) settings  need to be changed for RX; only applicable if there is both a source and sink block
+			// sample_rate
+			if(_current_samplerate != _rx_stream.samplerate) {
+				_current_samplerate = _rx_stream.samplerate;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX samplerate to %f", _current_samplerate);
+				hackrf_set_sample_rate(_dev,_current_samplerate);
+			}
+			
+			// frequency
+			if(_current_frequency != _rx_stream.frequency) {
+				_current_frequency = _rx_stream.frequency;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX frequency to %lu", _current_frequency);
+				hackrf_set_freq(_dev,_current_frequency);
+			}
+			
+			// frequency_correction; assume RX and TX use the same correction
+			// This will be the setting of whichever block was last added to the flow graph
+			
+			// RF Gain (RF Amp for TX & RX)
+			if(_current_amp != _rx_stream.amp_gain) {
+				_current_amp = _rx_stream.amp_gain;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX amp gain to %d", _current_amp);
+				hackrf_set_amp_enable(_dev,_current_amp);
+			}
+			
+			// IF Gain (LNA for RX; VGA_TX for TX)
+			// BB Gain (VGA for RX; n/a for TX)
+			// These are independant values in the hackrf, so no need to change
+
+			// Bandwidth
+			if(_current_bandwidth !=_rx_stream.bandwidth) {
+				_current_bandwidth =_rx_stream.bandwidth;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX bandwidth to %d", _current_bandwidth);
+				hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
+			}
 		}
 
 		SoapySDR_logf(SOAPY_SDR_DEBUG, "Start RX");
@@ -361,6 +397,43 @@ int SoapyHackRF::activateStream(
 		if(_current_mode==HACKRF_TRANSCEIVER_MODE_RX){
 
 			hackrf_stop_rx(_dev);
+			
+			// determine what (if any) settings  need to be changed for TX; only applicable if there is both a source and sink block
+			// sample_rate
+			if(_current_samplerate != _tx_stream.samplerate) {
+				_current_samplerate=_tx_stream.samplerate;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set TX samplerate to %f", _current_samplerate);
+				hackrf_set_sample_rate(_dev,_current_samplerate);
+			}
+			
+			// frequency
+			if(_current_frequency != _tx_stream.frequency) {
+				_current_frequency=_tx_stream.frequency;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set TX frequency to %lu", _current_frequency);
+				hackrf_set_freq(_dev,_current_frequency);
+			}
+			
+			// frequency_correction; assume RX and TX use the same correction
+			// This will be the setting of whichever block was last added to the flow graph
+			
+			// RF Gain (RF Amp for TX & RX)
+			if(_current_amp != _tx_stream.amp_gain) {
+				_current_amp=_tx_stream.amp_gain;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set TX amp gain to %d", _current_amp);
+				hackrf_set_amp_enable(_dev,_current_amp);
+			}
+			
+			// IF Gain (LNA for RX, VGA_TX for TX)
+			// BB Gain (VGA for RX, n/a for TX)
+			// These are independant values in the hackrf, so no need to change
+
+			// Bandwidth
+			if(_current_bandwidth !=_tx_stream.bandwidth) {
+				_current_bandwidth =_tx_stream.bandwidth;
+				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX bandwidth to %d", _current_bandwidth);
+				hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
+			}
+
 		}
 
 		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start TX" );
