@@ -1,6 +1,7 @@
 Release 0.3.2 (pending)
 ==========================
 
+- Track settings during TX/RX switch for TRX switching
 - Prevent spin loop in SoapyHackRF::acquireReadBuffer()
 - Fix edge case in SoapyHackRF::releaseReadBuffer()
 - Standard style find script for FindLIBHACKRF.cmake
