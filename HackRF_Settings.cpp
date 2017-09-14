@@ -251,10 +251,17 @@ std::vector<std::string> SoapyHackRF::listGains( const int direction, const size
 	std::vector<std::string> options;
 	if ( direction == SOAPY_SDR_RX )
 	{
-		options.push_back( "LNA" );
+	// in gr-osmosdr/lib/soapy/ soapy_sink_c.cc and soapy_source_c.cc expect if_gain at front and bb_gain at back
+		options.push_back( "LNA" );						// RX: if_gain
+		options.push_back( "AMP" );						// RX: rf_gain
+		options.push_back( "VGA" );						// RX: bb_gain
 	}
-	options.push_back( "VGA" );
-	options.push_back( "AMP" );
+	else
+	{
+		options.push_back( "VGA" );						// TX: if_gain
+		options.push_back( "AMP" );						// TX: rf_gain
+		options.push_back( "LNA" );						// TX: bb_gain (not used on tx)
+	}
 
 	return(options);
 	/*
