@@ -350,6 +350,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 void SoapyHackRF::setGain( const int direction, const size_t channel, const std::string &name, const double value )
 {
 	std::lock_guard<std::mutex> lock(_device_mutex);
+	SoapySDR_logf(SOAPY_SDR_DEBUG,"setGain %s %s, channel %d, gain %d", name.c_str(), direction == SOAPY_SDR_RX ? "RX" : "TX", channel, (int)value);
 	if ( name == "AMP" )
 	{
 		_current_amp = value;
