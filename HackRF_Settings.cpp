@@ -260,7 +260,6 @@ std::vector<std::string> SoapyHackRF::listGains( const int direction, const size
 	{
 		options.push_back( "VGA" );						// TX: if_gain
 		options.push_back( "AMP" );						// TX: rf_gain
-		options.push_back( "LNA" );						// TX: bb_gain (not used on tx)
 	}
 
 	return(options);
