@@ -251,10 +251,16 @@ std::vector<std::string> SoapyHackRF::listGains( const int direction, const size
 	std::vector<std::string> options;
 	if ( direction == SOAPY_SDR_RX )
 	{
-		options.push_back( "LNA" );
+	// in gr-osmosdr/lib/soapy/ soapy_sink_c.cc and soapy_source_c.cc expect if_gain at front and bb_gain at back
+		options.push_back( "LNA" );						// RX: if_gain
+		options.push_back( "AMP" );						// RX: rf_gain
+		options.push_back( "VGA" );						// RX: bb_gain
 	}
-	options.push_back( "VGA" );
-	options.push_back( "AMP" );
+	else
+	{
+		options.push_back( "VGA" );						// TX: if_gain
+		options.push_back( "AMP" );						// TX: rf_gain
+	}
 
 	return(options);
 	/*
@@ -343,6 +349,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 void SoapyHackRF::setGain( const int direction, const size_t channel, const std::string &name, const double value )
 {
 	std::lock_guard<std::mutex> lock(_device_mutex);
+	SoapySDR_logf(SOAPY_SDR_DEBUG,"setGain %s %s, channel %d, gain %d", name.c_str(), direction == SOAPY_SDR_RX ? "RX" : "TX", channel, (int)value);
 	if ( name == "AMP" )
 	{
 		_current_amp = value;
