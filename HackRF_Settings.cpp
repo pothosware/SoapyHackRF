@@ -288,6 +288,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const doub
 	std::lock_guard<std::mutex> lock(_device_mutex);
 	int32_t ret(0), gain(0);
 	gain = value;
+	SoapySDR_logf(SOAPY_SDR_DEBUG,"setGain RF %s, channel %d, gain %d", direction == SOAPY_SDR_RX ? "RX" : "TX", channel, gain);
 
 	if ( direction == SOAPY_SDR_RX )
 	{
@@ -361,6 +362,9 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 			_tx_stream.amp_gain=_current_amp;
 		}
 
+	if(	   ((direction == SOAPY_SDR_RX) && (_current_mode == HACKRF_TRANSCEIVER_MODE_RX))
+		|| ((direction == SOAPY_SDR_TX) && (_current_mode == HACKRF_TRANSCEIVER_MODE_TX))	)
+	{
 		if ( _dev != NULL )
 		{
 			int ret = hackrf_set_amp_enable( _dev, (_current_amp > 0)?1 : 0 );
@@ -369,6 +373,7 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_amp_enable(%f) returned %s", _current_amp, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
+	}
 	}else if ( direction == SOAPY_SDR_RX and name == "LNA" )
 	{
 		_rx_stream.lna_gain = value;
