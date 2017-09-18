@@ -323,7 +323,7 @@ int SoapyHackRF::activateStream(
 			if(_current_amp != _rx_stream.amp_gain) {
 				_current_amp = _rx_stream.amp_gain;
 				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX amp gain to %d", _current_amp);
-				hackrf_set_amp_enable(_dev,_current_amp);
+				hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			}
 			
 			// IF Gain (LNA for RX; VGA_TX for TX)
@@ -365,7 +365,7 @@ int SoapyHackRF::activateStream(
 			_current_bandwidth=_rx_stream.bandwidth;
 			hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
 			_current_amp=_rx_stream.amp_gain;
-			hackrf_set_amp_enable(_dev,_current_amp);
+			hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			hackrf_set_lna_gain(_dev,_rx_stream.lna_gain);
 			hackrf_set_vga_gain(_dev,_rx_stream.vga_gain);
 			hackrf_start_rx(_dev,_hackrf_rx_callback,(void *) this);
@@ -420,7 +420,7 @@ int SoapyHackRF::activateStream(
 			if(_current_amp != _tx_stream.amp_gain) {
 				_current_amp=_tx_stream.amp_gain;
 				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set TX amp gain to %d", _current_amp);
-				hackrf_set_amp_enable(_dev,_current_amp);
+				hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			}
 			
 			// IF Gain (LNA for RX, VGA_TX for TX)
@@ -458,7 +458,7 @@ int SoapyHackRF::activateStream(
 			_current_bandwidth=_tx_stream.bandwidth;
 			hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
 			_current_amp=_rx_stream.amp_gain;
-			hackrf_set_amp_enable(_dev,_current_amp);
+			hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			hackrf_set_txvga_gain(_dev,_tx_stream.vga_gain);
 			hackrf_set_antenna_enable(_dev,_tx_stream.bias);
 			hackrf_start_tx(_dev,_hackrf_tx_callback,(void *) this);
