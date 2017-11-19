@@ -1,3 +1,9 @@
+soapyhackrf (0.3.2-1) unstable; urgency=low
+
+  * Release 0.3.2 (2017-11-19)
+
+ -- Josh Blum <josh@pothosware.com>  Sun, 19 Nov 2017 15:39:14 -0000
+
 soapyhackrf (0.3.1-1) unstable; urgency=low
 
   * Release 0.3.1 (2017-06-19)

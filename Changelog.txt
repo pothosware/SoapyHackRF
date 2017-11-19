@@ -1,4 +1,4 @@
-Release 0.3.2 (pending)
+Release 0.3.2 (2017-11-19)
 ==========================
 
 - Corrected order of gain elements in the Rx direction
