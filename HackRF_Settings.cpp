@@ -420,7 +420,7 @@ double SoapyHackRF::getGain( const int direction, const size_t channel, const st
 	double gain = 0.0;
 	if ( direction == SOAPY_SDR_RX and name == "AMP" )
 	{
-		gain = -_rx_stream.amp_gain;
+		gain = _rx_stream.amp_gain;
 	}else if ( direction == SOAPY_SDR_TX and name == "AMP" )
 	{
 		gain = _tx_stream.amp_gain;
