@@ -1,6 +1,7 @@
 Release 0.3.3 (pending)
 ==========================
 
+- Added check for hackrf_device_list API in header
 - Fixed getGain() for the Rx AMP due to minus typo
 
 Release 0.3.2 (2017-11-19)

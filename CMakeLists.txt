@@ -19,6 +19,14 @@ endif ()
 message(STATUS "LIBHACKRF_INCLUDE_DIRS - ${LIBHACKRF_INCLUDE_DIRS}")
 message(STATUS "LIBHACKRF_LIBRARIES - ${LIBHACKRF_LIBRARIES}")
 
+#version check for recent hackrf with device list API
+message(STATUS "Checking for hackrf_device_list API...")
+message(STATUS "  Reading ${LIBHACKRF_INCLUDE_DIRS}/hackrf.h...")
+file(READ ${LIBHACKRF_INCLUDE_DIRS}/hackrf.h hackrf_h)
+string(FIND "${hackrf_h}" "hackrf_device_list" has_hackrf_device_list)
+if ("${has_hackrf_device_list}" STREQUAL "-1")
+    message(FATAL_ERROR "  libhackrf too old, missing hackrf_device_list API")
+endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${LIBHACKRF_INCLUDE_DIRS})
