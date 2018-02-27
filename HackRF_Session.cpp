@@ -50,6 +50,7 @@ SoapyHackRFSession::~SoapyHackRFSession(void)
     if (sessionCount == 0)
     {
         int ret = hackrf_exit();
+        if (ret == -2000) return; //work around https://github.com/mossmann/hackrf/issues/459
         if (ret != HACKRF_SUCCESS)
         {
             SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_exit() failed -- %s", hackrf_error_name(hackrf_error(ret)));
