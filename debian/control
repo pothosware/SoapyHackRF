@@ -13,7 +13,7 @@ Homepage: https://github.com/pothosware/SoapyHackRF/wiki
 Vcs-Git: https://github.com/pothosware/SoapyHackRF.git
 Vcs-Browser: https://github.com/pothosware/SoapyHackRF
 
-Package: soapysdr0.6-module-hackrf
+Package: soapysdr0.7-module-hackrf
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -22,7 +22,7 @@ Description: Soapy HackRF - HackRF device support for Soapy SDR.
 
 Package: soapysdr-module-hackrf
 Architecture: all
-Depends: soapysdr0.6-module-hackrf, ${misc:Depends}
+Depends: soapysdr0.7-module-hackrf, ${misc:Depends}
 Description: Soapy HackRF - HackRF device support for Soapy SDR.
  A Soapy module that supports HackRF devices within the Soapy API.
  .
