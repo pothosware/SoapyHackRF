@@ -55,7 +55,7 @@ endif(APPLE)
 SOAPY_SDR_MODULE_UTIL(
     TARGET HackRFSupport
     SOURCES
-	HackRF_Registation.cpp
+	HackRF_Registration.cpp
 	HackRF_Settings.cpp
 	HackRF_Streaming.cpp
 	HackRF_Session.cpp
