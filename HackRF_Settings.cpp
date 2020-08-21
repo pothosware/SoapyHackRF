@@ -442,13 +442,13 @@ double SoapyHackRF::getGain( const int direction, const size_t channel, const st
 SoapySDR::Range SoapyHackRF::getGainRange( const int direction, const size_t channel, const std::string &name ) const
 {
 	if ( name == "AMP" )
-		return(SoapySDR::Range( 0, HACKRF_AMP_MAX_DB ) );
+		return(SoapySDR::Range( 0, HACKRF_AMP_MAX_DB,  HACKRF_AMP_MAX_DB) );
 	if ( direction == SOAPY_SDR_RX and name == "LNA" )
-		return(SoapySDR::Range( 0, HACKRF_RX_LNA_MAX_DB ) );
-	if ( direction == SOAPY_SDR_RX and name == "VGA" )
-		return(SoapySDR::Range( 0, HACKRF_RX_VGA_MAX_DB ) );
+		return(SoapySDR::Range( 0, HACKRF_RX_LNA_MAX_DB, 8.0 ) );
+	if ( direction == SOAPY_SDR_RX and name == "VGA")
+		return(SoapySDR::Range( 0, HACKRF_RX_VGA_MAX_DB, 2.0 ) );
 	if ( direction == SOAPY_SDR_TX and name == "VGA" )
-		return(SoapySDR::Range( 0, HACKRF_TX_VGA_MAX_DB ) );
+		return(SoapySDR::Range( 0, HACKRF_TX_VGA_MAX_DB, 1.0 ) );
 	return(SoapySDR::Range( 0, 0 ) );
 }
 
