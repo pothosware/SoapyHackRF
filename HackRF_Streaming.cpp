@@ -687,7 +687,12 @@ int SoapyHackRF::writeStream(
 	size_t handle;
 
 	int ret=this->acquireWriteBuffer(stream,handle,(void **)&_tx_stream.remainderBuff,timeoutUs);
-	if (ret<0)return ret;
+	if(ret < 0){
+		if((ret == SOAPY_SDR_TIMEOUT) && (samp_avail > 0)){
+			return samp_avail;
+		}
+		return ret;
+	}
 
 	_tx_stream.remainderHandle=handle;
 	_tx_stream.remainderSamps=ret;
