@@ -622,8 +622,12 @@ int SoapyHackRF::readStream(
 	size_t handle;
 	int ret = this->acquireReadBuffer(stream, handle, (const void **)&_rx_stream.remainderBuff, flags, timeNs, timeoutUs);
 
-	if (ret < 0)
+	if (ret < 0){
+		if((ret == SOAPY_SDR_TIMEOUT) && (samp_avail > 0)){
+			return samp_avail;
+		}
 		return ret;
+	}
 
 	_rx_stream.remainderHandle=handle;
 	_rx_stream.remainderSamps=ret;
