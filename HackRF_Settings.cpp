@@ -107,7 +107,7 @@ std::string SoapyHackRF::getDriverKey( void ) const
 std::string SoapyHackRF::getHardwareKey( void ) const
 {
 	std::lock_guard<std::mutex> lock(_device_mutex);
-	uint8_t board_id=BOARD_ID_INVALID;
+	uint8_t board_id=BOARD_ID_UNDETECTED;
 
 	hackrf_board_id_read(_dev,&board_id);
 

@@ -40,7 +40,7 @@ static std::vector<SoapySDR::Kwargs> find_HackRF(const SoapySDR::Kwargs &args)
 		for (int i = 0; i < list->devicecount; i++) {
 		
 			hackrf_device* device = NULL;
-			uint8_t board_id = BOARD_ID_INVALID;
+			uint8_t board_id = BOARD_ID_UNDETECTED;
 			read_partid_serialno_t read_partid_serialno;
 
 			hackrf_device_list_open(list, i, &device);
