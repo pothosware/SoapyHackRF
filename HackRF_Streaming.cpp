@@ -254,6 +254,7 @@ SoapySDR::Stream *SoapyHackRF::setupStream(
 
 void SoapyHackRF::closeStream( SoapySDR::Stream *stream )
 {
+	this->deactivateStream(stream, 0, 0);
 	std::lock_guard<std::mutex> lock(_device_mutex);
 	if (stream == RX_STREAM) {
 		_rx_stream.clear_buffers();
