@@ -362,9 +362,6 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 			_tx_stream.amp_gain=_current_amp;
 		}
 
-	if(	   ((direction == SOAPY_SDR_RX) && (_current_mode == HACKRF_TRANSCEIVER_MODE_RX))
-		|| ((direction == SOAPY_SDR_TX) && (_current_mode == HACKRF_TRANSCEIVER_MODE_TX))	)
-	{
 		if ( _dev != NULL )
 		{
 			int ret = hackrf_set_amp_enable( _dev, (_current_amp > 0)?1 : 0 );
@@ -373,7 +370,6 @@ void SoapyHackRF::setGain( const int direction, const size_t channel, const std:
 				SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_amp_enable(%f) returned %s", _current_amp, hackrf_error_name( (hackrf_error) ret ) );
 			}
 		}
-	}
 	}else if ( direction == SOAPY_SDR_RX and name == "LNA" )
 	{
 		_rx_stream.lna_gain = value;
