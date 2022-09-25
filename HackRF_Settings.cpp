@@ -553,23 +553,6 @@ void SoapyHackRF::setSampleRate( const int direction, const size_t channel, cons
 	{
 		int ret = hackrf_set_sample_rate( _dev, _current_samplerate );
 
-		if(_auto_bandwidth){
-
-			_current_bandwidth=hackrf_compute_baseband_filter_bw_round_down_lt(_current_samplerate);
-
-
-			if(direction==SOAPY_SDR_RX){
-
-				_rx_stream.bandwidth=_current_bandwidth;
-			}
-			if(direction==SOAPY_SDR_TX){
-
-				_tx_stream.bandwidth=_current_bandwidth;
-			}
-
-			ret|=hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
-		}
-
 		if ( ret != HACKRF_SUCCESS )
 		{
 			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_sample_rate(%f) returned %s", _current_samplerate, hackrf_error_name( (hackrf_error) ret ) );
@@ -610,7 +593,7 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
 	std::lock_guard<std::mutex> lock(_device_mutex);
-	_current_bandwidth = hackrf_compute_baseband_filter_bw(bw);
+	_current_bandwidth = bw;
 
 	if(direction==SOAPY_SDR_RX){
 
