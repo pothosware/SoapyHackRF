@@ -332,7 +332,7 @@ private:
 		double samplerate;
 		uint32_t bandwidth;
 		uint64_t frequency;
-
+		bool bias;
 		bool overflow;
 	};
 

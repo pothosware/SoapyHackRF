@@ -283,7 +283,6 @@ int SoapyHackRF::activateStream(
 	const long long timeNs,
 	const size_t numElems )
 {
-
 	if(stream == RX_STREAM){
 
 		std::lock_guard<std::mutex> lock(_device_mutex);
@@ -348,6 +347,8 @@ int SoapyHackRF::activateStream(
 			_rx_stream.buf_tail = 0;
 		}
 
+		hackrf_set_antenna_enable(_dev,_rx_stream.bias);
+
 		int ret = hackrf_start_rx(_dev, _hackrf_rx_callback, (void *) this);
 		if (ret != HACKRF_SUCCESS) {
 			SoapySDR::logf(SOAPY_SDR_ERROR, "hackrf_start_rx() failed -- %s", hackrf_error_name(hackrf_error(ret)));
@@ -369,6 +370,7 @@ int SoapyHackRF::activateStream(
 			hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			hackrf_set_lna_gain(_dev,_rx_stream.lna_gain);
 			hackrf_set_vga_gain(_dev,_rx_stream.vga_gain);
+			hackrf_set_antenna_enable(_dev,_rx_stream.bias);
 			hackrf_start_rx(_dev,_hackrf_rx_callback,(void *) this);
 			ret=hackrf_is_streaming(_dev);
 		}
@@ -438,7 +440,7 @@ int SoapyHackRF::activateStream(
 		}
 
 		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start TX" );
-
+		hackrf_set_antenna_enable(_dev,_tx_stream.bias);
 		int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *) this );
 		if (ret != HACKRF_SUCCESS)
 		{
