@@ -283,7 +283,6 @@ int SoapyHackRF::activateStream(
 	const long long timeNs,
 	const size_t numElems )
 {
-
 	if(stream == RX_STREAM){
 
 		std::lock_guard<std::mutex> lock(_device_mutex);
@@ -339,7 +338,15 @@ int SoapyHackRF::activateStream(
 			}
 		}
 
-		SoapySDR_logf(SOAPY_SDR_DEBUG, "Start RX");
+		// Bias voltage. Since this setting may be provided as a device argument,
+		// it may not take effect until streaming is enabled for the first time.
+		if(_current_bias != _rx_stream.bias) {
+			_current_bias = _rx_stream.bias;
+			SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX bias voltage to %s", _current_bias ? "enabled" : "disabled");
+			hackrf_set_antenna_enable(_dev,_current_bias);
+		}
+		
+		SoapySDR_logf(SOAPY_SDR_DEBUG, "Start RX", _current_bias);
 
 		//reset buffer tracking before streaming
 		{
@@ -369,6 +376,8 @@ int SoapyHackRF::activateStream(
 			hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			hackrf_set_lna_gain(_dev,_rx_stream.lna_gain);
 			hackrf_set_vga_gain(_dev,_rx_stream.vga_gain);
+			_current_bias = _rx_stream.bias;
+			hackrf_set_antenna_enable(_dev,_current_bias);
 			hackrf_start_rx(_dev,_hackrf_rx_callback,(void *) this);
 			ret=hackrf_is_streaming(_dev);
 		}
@@ -434,11 +443,17 @@ int SoapyHackRF::activateStream(
 				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX bandwidth to %d", _current_bandwidth);
 				hackrf_set_baseband_filter_bandwidth(_dev,_current_bandwidth);
 			}
+		}
 
+		// Bias voltage. Since this setting may be provided as a device argument,
+		// it may not take effect until streaming is enabled for the first time.
+		if(_current_bias != _tx_stream.bias) {
+			_current_bias = _tx_stream.bias;
+			SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set TX bias voltage to %s", _current_bias ? "enabled" : "disabled");
+			hackrf_set_antenna_enable(_dev,_current_bias);
 		}
 
 		SoapySDR_logf( SOAPY_SDR_DEBUG, "Start TX" );
-
 		int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *) this );
 		if (ret != HACKRF_SUCCESS)
 		{
@@ -461,7 +476,8 @@ int SoapyHackRF::activateStream(
 			_current_amp=_rx_stream.amp_gain;
 			hackrf_set_amp_enable(_dev,(_current_amp > 0)?1 : 0 );
 			hackrf_set_txvga_gain(_dev,_tx_stream.vga_gain);
-			hackrf_set_antenna_enable(_dev,_tx_stream.bias);
+			_current_bias = _tx_stream.bias;
+			hackrf_set_antenna_enable(_dev,_current_bias);
 			hackrf_start_tx(_dev,_hackrf_tx_callback,(void *) this);
 			ret=hackrf_is_streaming(_dev);
 		}

@@ -332,7 +332,7 @@ private:
 		double samplerate;
 		uint32_t bandwidth;
 		uint64_t frequency;
-
+		bool bias;
 		bool overflow;
 	};
 
@@ -365,6 +365,8 @@ private:
 	uint32_t _current_bandwidth;
 
 	uint8_t _current_amp;
+
+	bool _current_bias;
 
 	/// Mutex protecting all use of the hackrf device _dev and other instance variables.
 	/// Most of the hackrf API is thread-safe because it only calls libusb, however
