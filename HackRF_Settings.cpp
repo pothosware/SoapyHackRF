@@ -71,6 +71,8 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 
 	_current_bandwidth=0;
 
+	_current_bias=false;
+
 	if (args.count("bias_tx"))
 		_tx_stream.bias = args.at("bias_tx") == "true";
 	
@@ -207,7 +209,8 @@ void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 		_tx_stream.bias=(value=="true") ? true : false;
 
 		if (_current_mode==HACKRF_TRANSCEIVER_MODE_TX) {
-			int ret=hackrf_set_antenna_enable(_dev,_tx_stream.bias);
+			_current_bias=_tx_stream.bias;
+			int ret=hackrf_set_antenna_enable(_dev,_current_bias);
 			if(ret!=HACKRF_SUCCESS)
 				SoapySDR_logf(SOAPY_SDR_INFO,"Failed to apply antenna bias voltage (TX)");
 		}
@@ -217,7 +220,8 @@ void SoapyHackRF::writeSetting(const std::string &key, const std::string &value)
 		_rx_stream.bias=(value=="true") ? true : false;
 
 		if (_current_mode == HACKRF_TRANSCEIVER_MODE_RX) {
-			int ret=hackrf_set_antenna_enable(_dev,_rx_stream.bias);
+			_current_bias=_rx_stream.bias;
+			int ret=hackrf_set_antenna_enable(_dev,_current_bias);
 			if(ret!=HACKRF_SUCCESS)
 				SoapySDR_logf(SOAPY_SDR_INFO,"Failed to apply antenna bias voltage (RX)");
 		}

@@ -366,6 +366,8 @@ private:
 
 	uint8_t _current_amp;
 
+	bool _current_bias;
+
 	/// Mutex protecting all use of the hackrf device _dev and other instance variables.
 	/// Most of the hackrf API is thread-safe because it only calls libusb, however
 	/// the activateStream() method in this library can close and re-open the device,
