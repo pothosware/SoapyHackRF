@@ -1,3 +1,9 @@
+Release 0.3.5 (pending)
+==========================
+
+- Added frequency correction (ppm) support
+- Require SoapySDR 0.6.0 or newer for the frequency correction API
+
 Release 0.3.4 (2022-01-16)
 ==========================
 

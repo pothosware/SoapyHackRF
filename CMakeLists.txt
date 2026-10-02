@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 2.8.12...3.10)
 project(SoapyHackRF CXX)
 
-find_package(SoapySDR "0.4.0" NO_MODULE REQUIRED)
+find_package(SoapySDR "0.6.0" NO_MODULE REQUIRED)
 
 get_filename_component(_SoapySDR_ROOT "${SoapySDR_INCLUDE_DIRS}/.." ABSOLUTE)
 message(STATUS "SoapySDR root directory: ${_SoapySDR_ROOT}")

@@ -219,6 +219,15 @@ public:
 	bool hasDCOffsetMode( const int direction, const size_t channel ) const;
 
 
+	bool hasFrequencyCorrection( const int direction, const size_t channel ) const;
+
+
+	void setFrequencyCorrection( const int direction, const size_t channel, const double value );
+
+
+	double getFrequencyCorrection( const int direction, const size_t channel ) const;
+
+
 	/*******************************************************************
 	 * Gain API
 	 ******************************************************************/
@@ -360,6 +369,8 @@ private:
 
 	uint64_t _current_frequency;
 
+	double _frequency_correction_ppm;
+
 	double _current_samplerate;
 
 	uint32_t _current_bandwidth;
@@ -377,4 +388,7 @@ private:
 	HackRF_transceiver_mode_t _current_mode;
 
 	SoapyHackRFSession _sess;
+
+	/// Tune to a frequency with the ppm correction applied (device mutex must be held)
+	void tuneFrequency( const uint64_t frequency );
 };

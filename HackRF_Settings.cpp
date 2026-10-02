@@ -64,6 +64,7 @@ SoapyHackRF::SoapyHackRF( const SoapySDR::Kwargs &args )
 	_current_amp = 0;
 
 	_current_frequency = 0;
+	_frequency_correction_ppm = 0.0;
 
 	_current_samplerate = 0;
 
@@ -239,6 +240,32 @@ std::string SoapyHackRF::getAntenna( const int direction, const size_t channel )
 bool SoapyHackRF::hasDCOffsetMode( const int direction, const size_t channel ) const
 {
 	return(false);
+}
+
+
+bool SoapyHackRF::hasFrequencyCorrection( const int direction, const size_t channel ) const
+{
+	return(true);
+}
+
+
+void SoapyHackRF::setFrequencyCorrection( const int direction, const size_t channel, const double value )
+{
+	std::lock_guard<std::mutex> lock(_device_mutex);
+	_frequency_correction_ppm = value;
+
+	// retune so the new correction takes effect immediately
+	if ( _dev != NULL && _current_frequency != 0 )
+	{
+		tuneFrequency( _current_frequency );
+	}
+}
+
+
+double SoapyHackRF::getFrequencyCorrection( const int direction, const size_t channel ) const
+{
+	std::lock_guard<std::mutex> lock(_device_mutex);
+	return(_frequency_correction_ppm);
 }
 
 
@@ -475,12 +502,7 @@ void SoapyHackRF::setFrequency( const int direction, const size_t channel, const
 
 	if ( _dev != NULL )
 	{
-		int ret = hackrf_set_freq( _dev, _current_frequency );
-
-		if ( ret != HACKRF_SUCCESS )
-		{
-			SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_freq(%f) returned %s", _current_frequency, hackrf_error_name( (hackrf_error) ret ) );
-		}
+		tuneFrequency( _current_frequency );
 	}
 }
 
@@ -505,6 +527,21 @@ double SoapyHackRF::getFrequency( const int direction, const size_t channel, con
 	}
 	return(freq);
 }
+
+
+void SoapyHackRF::tuneFrequency( const uint64_t frequency )
+{
+	// Same convention as gr-osmosdr's hackrf source/sink, so existing ppm
+	// values carry over: real_freq = freq * (1.0 + ppm * 0.000001)
+	uint64_t freq = (uint64_t) ( (double) frequency * ( 1.0 + _frequency_correction_ppm * 0.000001 ) );
+	int ret = hackrf_set_freq( _dev, freq );
+
+	if ( ret != HACKRF_SUCCESS )
+	{
+		SoapySDR::logf( SOAPY_SDR_ERROR, "hackrf_set_freq(%f) returned %s", (double) freq, hackrf_error_name( (hackrf_error) ret ) );
+	}
+}
+
 
 SoapySDR::ArgInfoList SoapyHackRF::getFrequencyArgsInfo(const int direction, const size_t channel) const
 {

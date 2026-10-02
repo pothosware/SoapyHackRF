@@ -314,11 +314,10 @@ int SoapyHackRF::activateStream(
 			if(_current_frequency != _rx_stream.frequency) {
 				_current_frequency = _rx_stream.frequency;
 				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set RX frequency to %lu", _current_frequency);
-				hackrf_set_freq(_dev,_current_frequency);
+				tuneFrequency(_current_frequency);
 			}
 			
-			// frequency_correction; assume RX and TX use the same correction
-			// This will be the setting of whichever block was last added to the flow graph
+			// frequency_correction is shared by RX and TX and applied by tuneFrequency()
 			
 			// RF Gain (RF Amp for TX & RX)
 			if(_current_amp != _rx_stream.amp_gain) {
@@ -360,7 +359,7 @@ int SoapyHackRF::activateStream(
 			hackrf_close(_dev);
 			hackrf_open_by_serial(_serial.c_str(), &_dev);
 			_current_frequency=_rx_stream.frequency;
-			hackrf_set_freq(_dev,_current_frequency);
+			tuneFrequency(_current_frequency);
 			_current_samplerate=_rx_stream.samplerate;
 			hackrf_set_sample_rate(_dev,_current_samplerate);
 			_current_bandwidth=_rx_stream.bandwidth;
@@ -411,11 +410,10 @@ int SoapyHackRF::activateStream(
 			if(_current_frequency != _tx_stream.frequency) {
 				_current_frequency=_tx_stream.frequency;
 				SoapySDR_logf(SOAPY_SDR_DEBUG, "activateStream - Set TX frequency to %lu", _current_frequency);
-				hackrf_set_freq(_dev,_current_frequency);
+				tuneFrequency(_current_frequency);
 			}
 			
-			// frequency_correction; assume RX and TX use the same correction
-			// This will be the setting of whichever block was last added to the flow graph
+			// frequency_correction is shared by RX and TX and applied by tuneFrequency()
 			
 			// RF Gain (RF Amp for TX & RX)
 			if(_current_amp != _tx_stream.amp_gain) {
@@ -453,7 +451,7 @@ int SoapyHackRF::activateStream(
 			hackrf_close(_dev);
 			hackrf_open_by_serial(_serial.c_str(), &_dev);
 			_current_frequency=_tx_stream.frequency;
-			hackrf_set_freq(_dev,_current_frequency);
+			tuneFrequency(_current_frequency);
 			_current_samplerate=_tx_stream.samplerate;
 			hackrf_set_sample_rate(_dev,_current_samplerate);
 			_current_bandwidth=_tx_stream.bandwidth;
