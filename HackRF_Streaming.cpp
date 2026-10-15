@@ -546,6 +546,13 @@ void readbuf(int8_t * src, void * dst, uint32_t len,uint32_t format,size_t offse
 }
 
 
+// The device takes each part as a signed eight-bit sample whose full scale is 127. A part
+// past full scale saturates here; a direct cast of it wraps to the opposite sign.
+static int8_t to_int8_saturating(double scaled){
+	return (int8_t) std::max(-127.0,std::min(127.0,scaled));
+}
+
+
 void writebuf(const void * src, int8_t* dst, uint32_t len,uint32_t format,size_t offset) {
 	if(format==HACKRF_FORMAT_INT8){
 		int8_t *samples_cs8=(int8_t *) src+offset*BYTES_PER_SAMPLE;
@@ -563,14 +570,14 @@ void writebuf(const void * src, int8_t* dst, uint32_t len,uint32_t format,size_t
 	}else if(format==HACKRF_FORMAT_FLOAT32){
 		float *samples_cf32=(float *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
-			dst[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
+			dst[i*BYTES_PER_SAMPLE] = to_int8_saturating(samples_cf32[i*BYTES_PER_SAMPLE] * 127.0);
+			dst[i*BYTES_PER_SAMPLE+1] = to_int8_saturating(samples_cf32[i*BYTES_PER_SAMPLE+1] * 127.0);
 		}
 	}else if(format==HACKRF_FORMAT_FLOAT64){
 		double *samples_cf64=(double *) src+offset*BYTES_PER_SAMPLE;
 		for (uint32_t i=0;i<len;++i){
-			dst[i*BYTES_PER_SAMPLE] = (int8_t) (samples_cf64[i*BYTES_PER_SAMPLE] * 127.0);
-			dst[i*BYTES_PER_SAMPLE+1] = (int8_t) (samples_cf64[i*BYTES_PER_SAMPLE+1] * 127.0);
+			dst[i*BYTES_PER_SAMPLE] = to_int8_saturating(samples_cf64[i*BYTES_PER_SAMPLE] * 127.0);
+			dst[i*BYTES_PER_SAMPLE+1] = to_int8_saturating(samples_cf64[i*BYTES_PER_SAMPLE+1] * 127.0);
 		}
 
 	}else {
