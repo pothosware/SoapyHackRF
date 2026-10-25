@@ -590,6 +590,14 @@ std::vector<double> SoapyHackRF::listSampleRates( const int direction, const siz
 }
 
 
+SoapySDR::RangeList SoapyHackRF::getSampleRateRange( const int direction, const size_t channel ) const
+{
+	SoapySDR::RangeList ranges;
+	ranges.push_back( SoapySDR::Range( 2e6, 20e6 ) );
+	return(ranges);
+}
+
+
 void SoapyHackRF::setBandwidth( const int direction, const size_t channel, const double bw )
 {
 	std::lock_guard<std::mutex> lock(_device_mutex);
